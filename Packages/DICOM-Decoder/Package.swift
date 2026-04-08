@@ -15,6 +15,7 @@ let package = Package(
     targets: [
         .target(
             name: "DicomCore",
+            dependencies: [],
             path: "Sources/DicomCore",
             resources: [
                 .process("Resources")

@@ -329,14 +329,14 @@ final class DICOMStore {
             if sliceEntries.isEmpty {
                 if compressedCount == totalCount {
                     await updateError(
-                        "All \(compressedCount) files use a compressed transfer syntax (e.g. JPEG2000) " +
-                        "that could not be decoded on this platform.\n\n" +
-                        "You can convert them to uncompressed DICOM using dcmtk:\n" +
+                        "All \(compressedCount) files use a compressed transfer syntax, but none of them could be decoded.\n\n" +
+                        "Single-frame JPEG and JPEG2000 DICOM images are supported. If this series still fails, it may use an unsupported encapsulation variant or multi-frame layout.\n\n" +
+                        "As a fallback, you can convert to uncompressed DICOM using dcmtk:\n" +
                         "  dcmconv --write-xfer-little input.dcm output.dcm"
                     )
                 } else if compressedCount > 0 {
                     await updateError(
-                        "\(compressedCount) of \(totalCount) files used unsupported compression and were skipped. " +
+                        "\(compressedCount) of \(totalCount) files used compressed transfer syntaxes and were skipped after decode failure. " +
                         "No decodable slices remained."
                     )
                 } else {

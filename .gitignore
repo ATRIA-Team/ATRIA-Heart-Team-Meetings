@@ -15,3 +15,9 @@ xcuserdata/
 # OS X
 #
 .DS_Store
+
+# Project Specific
+CORO_TC
+DICOM_DECODER_IMPROVEMENTS.md
+DICOM_TRANSFER_SYNTAX_GUIDE.md
+Specials 1CoronaryCTA_with_spiral _CTA_pre/

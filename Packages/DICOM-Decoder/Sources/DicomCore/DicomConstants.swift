@@ -267,6 +267,12 @@ public enum DicomVR: Int {
     /// Unique Identifier (max 64 chars)
     case UI = 0x5549
 
+    /// Unlimited Characters (max 2^32-2 chars)
+    case UC = 0x5543
+
+    /// Universal Resource Identifier (max 2^32-2 chars)
+    case UR = 0x5552
+
     /// Unlimited Text (max 2^32-2 chars)
     case UT = 0x5554
 
@@ -278,8 +284,14 @@ public enum DicomVR: Int {
     /// Floating Point Single (4 bytes)
     case FL = 0x464C
 
-    /// Integer String (max 12 chars)
-    case IS = 0x4953
+    /// Other 64-bit Very Long (max 2^32-8 bytes)
+    case OV = 0x4F56
+
+    /// Signed 64-bit Very Long (8 bytes)
+    case SV = 0x5356
+
+    /// Unsigned 64-bit Very Long (8 bytes)
+    case UV = 0x5556
 
     /// Signed Long (4 bytes)
     case SL = 0x534C
@@ -329,7 +341,7 @@ public enum DicomVR: Int {
     /// to accommodate larger data elements.
     public var uses32BitLength: Bool {
         switch self {
-        case .OB, .OW, .SQ, .UN, .UT:
+        case .OB, .OW, .SQ, .UN, .UT, .UC, .UR, .OV, .SV, .UV:
             return true
         default:
             return false

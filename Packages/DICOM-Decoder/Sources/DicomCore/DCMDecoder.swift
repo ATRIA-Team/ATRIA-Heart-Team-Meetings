@@ -131,6 +131,7 @@ public final class DCMDecoder: DicomDecoderProtocol {
     /// certain structures in the file.
     private var bigEndianTransferSyntax: Bool = false
     private var littleEndian: Bool = true
+    private var isExplicitVR: Bool = true
 
     /// Rescale intercept and slope.  These values are stored in
     /// DICOM headers and may be used to map pixel intensities to
@@ -389,10 +390,11 @@ public final class DCMDecoder: DicomDecoderProtocol {
                 // If compressed transfer syntax, attempt to decode compressed pixel data.
                 if !compressedImage {
                     readPixelsUnsafe()
+                    dicomFileReadSuccess = pixels8 != nil || pixels16 != nil || pixels24 != nil
                 } else {
                     decodeCompressedPixelDataUnsafe()
+                    dicomFileReadSuccess = pixels8 != nil || pixels16 != nil || pixels24 != nil
                 }
-                dicomFileReadSuccess = true
             } else {
                 dicomFileReadSuccess = false
             }
@@ -404,10 +406,7 @@ public final class DCMDecoder: DicomDecoderProtocol {
     /// buffer is not present.  The array length is ``width × height``.
     public func getPixels8() -> [UInt8]? {
         return synchronized {
-            let startTime = CFAbsoluteTimeGetCurrent()
-            if pixels8 == nil { readPixelsUnsafe() }
-            let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-            if elapsed > 1 { debugPerfLog("[PERF] getPixels8: \(String(format: "%.2f", elapsed))ms") }
+            if pixels8 == nil && !compressedImage { readPixelsUnsafe() }
             return pixels8
         }
     }
@@ -417,10 +416,7 @@ public final class DCMDecoder: DicomDecoderProtocol {
     /// buffer is not present.  The array length is ``width × height``.
     public func getPixels16() -> [UInt16]? {
         return synchronized {
-            let startTime = CFAbsoluteTimeGetCurrent()
-            if pixels16 == nil { readPixelsUnsafe() }
-            let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-            if elapsed > 1 { debugPerfLog("[PERF] getPixels16: \(String(format: "%.2f", elapsed))ms") }
+            if pixels16 == nil && !compressedImage { readPixelsUnsafe() }
             return pixels16
         }
     }
@@ -430,10 +426,7 @@ public final class DCMDecoder: DicomDecoderProtocol {
     /// is not present.  The array length is ``width × height × 3``.
     public func getPixels24() -> [UInt8]? {
         return synchronized {
-            let startTime = CFAbsoluteTimeGetCurrent()
-            if pixels24 == nil { readPixelsUnsafe() }
-            let elapsed = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-            if elapsed > 1 { debugPerfLog("[PERF] getPixels24: \(String(format: "%.2f", elapsed))ms") }
+            if pixels24 == nil && !compressedImage { readPixelsUnsafe() }
             return pixels24
         }
     }
@@ -831,6 +824,7 @@ public final class DCMDecoder: DicomDecoderProtocol {
             location: &location,
             data: dicomData,
             littleEndian: &littleEndian,
+            isExplicitVR: isExplicitVR,
             bigEndianTransferSyntax: bigEndianTransferSyntax
         )
 
@@ -907,6 +901,10 @@ public final class DCMDecoder: DicomDecoderProtocol {
         compressedImage = false
         imageOrientation = nil
         imagePosition = nil
+        // DICOM Meta-header (Group 0002) is always Explicit VR Little Endian
+        isExplicitVR = true
+        littleEndian = true
+        bigEndianTransferSyntax = false
         // Move to offset 128 where "DICM" marker resides
         location = 128
         // Read the four magic bytes
@@ -960,10 +958,23 @@ public final class DCMDecoder: DicomDecoderProtocol {
                 if let syntax = DicomTransferSyntax(uid: s) {
                     compressedImage = syntax.isCompressed
                     bigEndianTransferSyntax = syntax.isBigEndian
+                    isExplicitVR = syntax.isExplicitVR
+                    littleEndian = !syntax.isBigEndian
+                    
+                    // Re-initialize binary reader and tag parser with correct endianness
+                    self.reader = DCMBinaryReader(data: dicomData, littleEndian: littleEndian)
+                    if let reader = self.reader {
+                        self.tagParser = DCMTagParser(data: dicomData, dict: dict, binaryReader: reader)
+                    }
+                    // Update local loop reader reference
+                    if let newReader = self.reader {
+                        reader = newReader
+                    }
                 } else {
                     // Unknown transfer syntax - assume uncompressed and little endian
                     compressedImage = false
                     bigEndianTransferSyntax = false
+                    isExplicitVR = true
                 }
             case Tag.modality.rawValue:
                 let elementLength = tagParser?.currentElementLength ?? 0
@@ -1194,12 +1205,21 @@ public final class DCMDecoder: DicomDecoderProtocol {
     /// false.
     /// NOTE: This is the unsafe version that must be called from within a synchronized block.
     private func decodeCompressedPixelDataUnsafe() {
+        if offset <= 1, let locatedOffset = locatePixelDataValueOffset() {
+            offset = locatedOffset
+        }
+
         // Use DCMPixelReader to decode compressed pixel data
         guard let result = DCMPixelReader.decodeCompressedPixelData(
             data: dicomData,
             offset: offset,
+            transferSyntaxUID: transferSyntaxUID,
+            numberOfFrames: nImages,
+            pixelRepresentation: pixelRepresentation,
+            photometricInterpretation: photometricInterpretation,
             logger: logger
         ) else {
+            logger.warning("Compressed pixel decode failed for transfer syntax \(transferSyntaxUID) at offset \(offset)")
             dicomFileReadSuccess = false
             return
         }
@@ -1215,6 +1235,38 @@ public final class DCMDecoder: DicomDecoderProtocol {
         pixels8 = result.pixels8
         pixels16 = result.pixels16
         pixels24 = result.pixels24
+    }
+
+    private func locatePixelDataValueOffset() -> Int? {
+        let littleEndianTag = Data([0xE0, 0x7F, 0x10, 0x00])
+        let bigEndianTag = Data([0x7F, 0xE0, 0x00, 0x10])
+
+        let tagRange: Range<Data.Index>?
+        if let range = dicomData.range(of: littleEndianTag) {
+            tagRange = range
+        } else {
+            tagRange = dicomData.range(of: bigEndianTag)
+        }
+
+        guard let tagRange else {
+            logger.warning("Failed to locate Pixel Data tag while decoding compressed image")
+            return nil
+        }
+
+        let start = tagRange.lowerBound
+        guard start + 8 <= dicomData.count else { return nil }
+
+        let vr0 = dicomData[start + 4]
+        let vr1 = dicomData[start + 5]
+        let vr = String(bytes: [vr0, vr1], encoding: .ascii) ?? ""
+
+        switch vr {
+        case "OB", "OW", "SQ", "UN", "UT":
+            guard start + 12 <= dicomData.count else { return nil }
+            return start + 12
+        default:
+            return start + 8
+        }
     }
 }
 
