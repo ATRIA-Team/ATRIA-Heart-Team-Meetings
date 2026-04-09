@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A57AFE192F866311009CD5BE /* DicomCore in Frameworks */ = {isa = PBXBuildFile; productRef = A57AFE182F866311009CD5BE /* DicomCore */; };
 		A5BEF1142F73F7B30033EB1B /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = A5BEF1132F73F7B30033EB1B /* RealityKitContent */; };
-		A5BEF1242F73F7E60033EB1B /* DicomCore in Frameworks */ = {isa = PBXBuildFile; productRef = A5BEF1232F73F7E60033EB1B /* DicomCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,7 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A5BEF1242F73F7E60033EB1B /* DicomCore in Frameworks */,
+				A57AFE192F866311009CD5BE /* DicomCore in Frameworks */,
 				A5BEF1142F73F7B30033EB1B /* RealityKitContent in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -96,7 +96,7 @@
 			name = DemoDICOM;
 			packageProductDependencies = (
 				A5BEF1132F73F7B30033EB1B /* RealityKitContent */,
-				A5BEF1232F73F7E60033EB1B /* DicomCore */,
+				A57AFE182F866311009CD5BE /* DicomCore */,
 			);
 			productName = DemoDICOM;
 			productReference = A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */;
@@ -127,7 +127,7 @@
 			mainGroup = A5BEF1052F73F7B30033EB1B;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A5BEF1222F73F7E60033EB1B /* XCLocalSwiftPackageReference "Packages/DICOM-Decoder" */,
+				A57AFE172F866311009CD5BE /* XCRemoteSwiftPackageReference "DICOM-Decoder" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A5BEF10F2F73F7B30033EB1B /* Products */;
@@ -167,8 +167,9 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = DemoDICOM/DemoDICOM.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-CURRENT_PROJECT_VERSION = 7;
-DEVELOPMENT_TEAM = 2263LPF2FA;				ENABLE_PREVIEWS = YES;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = 2XSHXS4594;
+				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
 				INFOPLIST_KEY_NSAccessoryTrackingUsageDescription = "DemoDICOM uses spatial accessory tracking to let you draw 3D annotations on CT scan slices.";
@@ -200,8 +201,9 @@ DEVELOPMENT_TEAM = 2263LPF2FA;				ENABLE_PREVIEWS = YES;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = DemoDICOM/DemoDICOM.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-CURRENT_PROJECT_VERSION = 7;
-DEVELOPMENT_TEAM = 2263LPF2FA;				ENABLE_PREVIEWS = YES;
+				CURRENT_PROJECT_VERSION = 7;
+				DEVELOPMENT_TEAM = 2XSHXS4594;
+				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
 				INFOPLIST_KEY_NSAccessoryTrackingUsageDescription = "DemoDICOM uses spatial accessory tracking to let you draw 3D annotations on CT scan slices.";
@@ -370,22 +372,26 @@ DEVELOPMENT_TEAM = 2263LPF2FA;				ENABLE_PREVIEWS = YES;
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		A5BEF1222F73F7E60033EB1B /* XCLocalSwiftPackageReference "Packages/DICOM-Decoder" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "Packages/DICOM-Decoder";
+/* Begin XCRemoteSwiftPackageReference section */
+		A57AFE172F866311009CD5BE /* XCRemoteSwiftPackageReference "DICOM-Decoder" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ATRIA-Team/DICOM-Decoder.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		A57AFE182F866311009CD5BE /* DicomCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A57AFE172F866311009CD5BE /* XCRemoteSwiftPackageReference "DICOM-Decoder" */;
+			productName = DicomCore;
+		};
 		A5BEF1132F73F7B30033EB1B /* RealityKitContent */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RealityKitContent;
-		};
-		A5BEF1232F73F7E60033EB1B /* DicomCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A5BEF1222F73F7E60033EB1B /* XCLocalSwiftPackageReference "Packages/DICOM-Decoder" */;
-			productName = DicomCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -1,0 +1,15 @@
+{
+  "originHash" : "fb1f5969f133a2b4f91795304b39b2f50cbe7a4764ec60a0faf3b233f22e6064",
+  "pins" : [
+    {
+      "identity" : "dicom-decoder",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ATRIA-Team/DICOM-Decoder.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "7902967736f00841dbbafb65924d53056d5faa27"
+      }
+    }
+  ],
+  "version" : 3
+}
