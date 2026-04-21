@@ -23,7 +23,10 @@ struct DrawPointMessage: Codable {
 /// Points are emitted for every Apple Pencil move in the annotation window.
 /// `isStart` marks the beginning of a new stroke; `isEnd` marks its completion.
 /// Coordinates are normalized to [0, 1] so the shared panel can scale them to any size.
+/// `sessionID` ties each point to its annotation session so multiple concurrent
+/// annotation windows can maintain independent, isolated stroke histories.
 struct Annotation2DPointMessage: Codable {
+    let sessionID: UUID  // which annotation session this stroke belongs to
     let strokeID: UUID
     let x: Float        // normalized [0, 1] within the canvas bounds
     let y: Float        // normalized [0, 1] within the canvas bounds

@@ -28,16 +28,20 @@ struct DICOMSyncMessage: Codable {
         case participantNotReady
         /// A participant (local or remote) cleared all 3D immersive drawings.
         case clearDrawings
-        /// A participant removed a specific set of their own 2D annotation strokes.
-        /// Only the strokes whose IDs are listed are removed; others are preserved.
-        case removeAnnotationStrokes(strokeIDs: [UUID])
+        /// A participant removed a specific set of their own 2D annotation strokes
+        /// from a specific session. Only the listed strokes are removed; others are preserved.
+        case removeAnnotationStrokes(sessionID: UUID, strokeIDs: [UUID])
 
-        // MARK: - Annotation Panel
+        // MARK: - Annotation Sessions
 
-        /// A participant started annotating — show the shared live panel to everyone.
-        case annotationPanelOpened
-        /// A participant finished annotating — hide the shared panel for everyone.
-        case annotationPanelClosed
+        /// A participant opened (or re-opened) an annotation window for the given session.
+        /// `sliceIndex` tells receiving peers which slice to freeze as the session background.
+        /// Receivers increment the session's open-count; if the session is unknown they create it.
+        case annotationSessionOpened(sessionID: UUID, sliceIndex: Int)
+
+        /// A participant closed their annotation window for the given session.
+        /// Receivers decrement the session's open-count and remove it when it reaches zero.
+        case annotationSessionClosed(sessionID: UUID)
 
         // MARK: - Drawing Space
 

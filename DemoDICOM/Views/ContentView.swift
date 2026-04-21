@@ -52,20 +52,6 @@ struct ContentView: View {
                     sliceViewerView
                 }
             }
-            .navigationTitle("DICOM Viewer")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    sharePlayButton
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    drawingToggleButton
-                    Button {
-                        store.isShowingFolderPicker = true
-                    } label: {
-                        Label("Import CT Scan", systemImage: "folder.badge.plus")
-                    }
-                }
-            }
             .fileImporter(
                 isPresented: $store.isShowingFolderPicker,
                 allowedContentTypes: [.folder],
@@ -76,6 +62,25 @@ struct ContentView: View {
                     if let url = urls.first { store.importFolder(url: url) }
                 case .failure(let error):
                     store.errorMessage = "File picker error: \(error.localizedDescription)"
+                }
+            }
+            .navigationTitle("DICOM Viewer")
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    sharePlayButton
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    drawingToggleButton
+                    Button {
+                        store.isShowingHTMLFilePicker = true
+                    } label: {
+                        Label("Open HTML", systemImage: "doc.richtext")
+                    }
+                    Button {
+                        store.isShowingFolderPicker = true
+                    } label: {
+                        Label("Import CT Scan", systemImage: "folder.badge.plus")
+                    }
                 }
             }
             .overlay {
@@ -91,6 +96,21 @@ struct ContentView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(store.errorMessage ?? "")
+            }
+        }
+        .fileImporter(
+            isPresented: $store.isShowingHTMLFilePicker,
+            allowedContentTypes: [.html],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    store.htmlFileURL = url
+                    openWindow(id: "htmlViewer")
+                }
+            case .failure(let error):
+                store.errorMessage = "HTML file picker error: \(error.localizedDescription)"
             }
         }
         // Disable window interaction while drawing so the stylus button
@@ -192,8 +212,7 @@ struct ContentView: View {
                     .shadow(radius: 4)
                     .frame(maxHeight: .infinity)
                     .onLongPressGesture(minimumDuration: 0.5) {
-                        store.isAnnotationWindowOpen = true
-                        openWindow(id: "annotation")
+                        openWindow(id: "annotation", value: UUID())
                     }
                     .overlay(alignment: .bottomTrailing) {
                         Label("Hold to annotate", systemImage: "pencil.and.outline")
@@ -211,46 +230,72 @@ struct ContentView: View {
 
     private var annotationPanel: some View {
         VStack(spacing: 0) {
-            // Header — tap the expand button to open a full local viewer window
+            // Header
             HStack {
-                Label("Live Annotation", systemImage: "pencil.and.outline")
+                Label("Live Annotations", systemImage: "pencil.and.outline")
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
+                // New annotation button — long-press on the slice is the primary way,
+                // but this provides a quick shortcut from the sidebar.
                 Button {
-                    openWindow(id: "annotation")
+                    openWindow(id: "annotation", value: UUID())
                 } label: {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
+                    Image(systemName: "plus")
                         .imageScale(.small)
                 }
                 .buttonStyle(.borderless)
-                .help("Open annotation window to draw")
+                .help("Open new annotation")
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .background(.ultraThinMaterial)
 
-            // Slice + live strokes
-            if let cgImage = store.currentSliceImage {
-                Image(decorative: cgImage, scale: 1.0)
-                    .resizable()
-                    .scaledToFit()
-                    .overlay {
-                        AnnotationStrokesView(strokes: Array(store.annotationPanelStrokes.values))
+            // One card per live session
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    let sessions = store.liveSessions.values.sorted { $0.sliceIndex < $1.sliceIndex }
+                    ForEach(sessions) { session in
+                        annotationSessionCard(session)
                     }
-                    .padding(12)
-            } else {
-                ContentUnavailableView(
-                    "No slice",
-                    systemImage: "doc.viewfinder"
-                )
+                }
+                .padding(12)
             }
-
-            Spacer(minLength: 0)
         }
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
         .padding(.vertical, 8)
         .padding(.trailing, 8)
+    }
+
+    @ViewBuilder
+    private func annotationSessionCard(_ session: LiveAnnotationSession) -> some View {
+        VStack(spacing: 6) {
+            // Frozen thumbnail with live strokes overlaid
+            Image(decorative: session.frozenImage, scale: 1.0)
+                .resizable()
+                .scaledToFit()
+                .overlay {
+                    AnnotationStrokesView(strokes: Array(session.strokes.values))
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            HStack {
+                Text("Slice \(session.sliceIndex + 1)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    openWindow(id: "annotation", value: session.id)
+                } label: {
+                    Label("Open to Draw", systemImage: "pencil")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+            }
+        }
+        .padding(8)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var metadataHeader: some View {

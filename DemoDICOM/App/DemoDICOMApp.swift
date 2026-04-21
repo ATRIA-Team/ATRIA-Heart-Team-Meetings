@@ -29,10 +29,12 @@ struct DemoDICOMApp: App {
         }
         .modelContainer(annotationContainer)
 
-        // 2-D annotation window (local — only the annotating user sees this).
-        // Opened from ContentView when the user long-presses on the CT slice.
-        WindowGroup(id: "annotation") {
-            AnnotationView()
+        // 2-D annotation window — one independent window per session UUID.
+        // Opened with openWindow(id: "annotation", value: someUUID).
+        // visionOS focuses an existing window if the same UUID is requested again,
+        // so participants can't accidentally open duplicate windows for one session.
+        WindowGroup(id: "annotation", for: UUID.self) { $sessionID in
+            AnnotationView(sessionID: sessionID ?? UUID())
                 .environment(store)
         }
         .defaultSize(width: 720, height: 780)
@@ -46,6 +48,13 @@ struct DemoDICOMApp: App {
         }
         .defaultSize(width: 360, height: 220)
         .windowResizability(.contentSize)
+
+        // HTML viewer window — opened from ContentView via file picker.
+        WindowGroup(id: "htmlViewer") {
+            HTMLViewerWindow()
+                .environment(store)
+        }
+        .defaultSize(width: 800, height: 600)
 
         // Mixed-immersion drawing space.
         // Opened/dismissed from ContentView via openImmersiveSpace / dismissImmersiveSpace.

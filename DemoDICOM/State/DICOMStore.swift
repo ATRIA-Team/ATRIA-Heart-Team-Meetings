@@ -12,13 +12,30 @@ import UniformTypeIdentifiers
 
 // MARK: - AnnotationPanelStroke
 
-/// A single stroke in the shared live-annotation panel.
+/// A single stroke in a live annotation session.
 /// Points are normalized to [0, 1] so they scale correctly to any panel size.
 struct AnnotationPanelStroke {
     let id: UUID
     var points: [CGPoint]
     let color: Color
     let lineWidth: CGFloat
+}
+
+// MARK: - LiveAnnotationSession
+
+/// One active annotation session — a frozen snapshot of a DICOM slice plus
+/// the real-time strokes all participants are drawing on it.
+///
+/// The `frozenImage` is captured once when the session is opened and never
+/// changes thereafter, even if the slider or preset changes in the main viewer.
+struct LiveAnnotationSession: Identifiable {
+    let id: UUID
+    /// Index into `DICOMStore.sliceImages` at the moment this session was created.
+    let sliceIndex: Int
+    /// The windowed DICOM image frozen at session-open time.
+    let frozenImage: CGImage
+    /// Live strokes from all participants, keyed by strokeID.
+    var strokes: [UUID: AnnotationPanelStroke] = [:]
 }
 
 // MARK: - DICOMStore
@@ -53,79 +70,119 @@ final class DICOMStore {
         }
     }
 
-    /// Whether the 2-D annotation window is open on this device.
-    /// Local only — not synced via SharePlay.
-    var isAnnotationWindowOpen = false
+    /// URL of the HTML file selected by the user for the HTML viewer window.
+    var htmlFileURL: URL?
 
-    /// Number of annotation windows currently open on THIS device.
-    private var localAnnotationWindowCount = 0
+    /// Whether the HTML file picker is currently showing.
+    var isShowingHTMLFilePicker = false
 
-    /// Number of remote devices that currently have at least one annotation window open.
-    /// Incremented when a peer sends `annotationPanelOpened`, decremented on `annotationPanelClosed`.
-    private(set) var remoteAnnotatorCount = 0
+    // MARK: - Live annotation sessions
 
-    /// The shared live-annotation panel is visible as long as at least one window
-    /// (on any participant's device) is open.
-    var isAnnotationPanelVisible: Bool { localAnnotationWindowCount > 0 || remoteAnnotatorCount > 0 }
+    /// All currently active annotation sessions, keyed by session ID.
+    /// Each session holds a frozen CGImage snapshot and its own stroke dictionary.
+    /// The sidebar and any open AnnotationView windows observe this directly.
+    private(set) var liveSessions: [UUID: LiveAnnotationSession] = [:]
 
-    // MARK: - Annotation window lifecycle
+    /// The live-annotation sidebar is visible whenever any session is active.
+    var isAnnotationPanelVisible: Bool { !liveSessions.isEmpty }
 
-    /// Call when an annotation window opens on this device.
-    /// Sends `annotationPanelOpened` via SharePlay on the first window only.
+    /// Combined open-count per session across all participants (local + remote).
+    /// When this reaches zero for a session, the session is removed everywhere.
+    private var sessionOpenCounts: [UUID: Int] = [:]
+
+    /// How many AnnotationView windows THIS device has open per session.
+    /// Used to re-broadcast session state to late-joining peers.
+    private(set) var locallyOpenSessionCount: [UUID: Int] = [:]
+
+    // MARK: - Annotation session lifecycle (local actions)
+
+    /// Called when THIS device opens a BRAND-NEW annotation window (long-press on slice).
+    /// Creates the session locally, freezes the current slice image, and notifies peers.
     @MainActor
-    func annotationWindowOpened() {
-        let wasActive = isAnnotationPanelVisible
-        localAnnotationWindowCount += 1
-        if localAnnotationWindowCount == 1 {
-            if !wasActive {
-                // Fresh session — clear any leftover strokes from a previous session.
-                annotationPanelStrokes = [:]
-            }
-            sharePlay.send(DICOMSyncMessage(kind: .annotationPanelOpened))
+    func createAnnotationSession(id: UUID, sliceIndex: Int, image: CGImage) {
+        liveSessions[id] = LiveAnnotationSession(id: id, sliceIndex: sliceIndex, frozenImage: image)
+        sessionOpenCounts[id] = 1
+        locallyOpenSessionCount[id, default: 0] += 1
+        sharePlay.send(DICOMSyncMessage(kind: .annotationSessionOpened(sessionID: id, sliceIndex: sliceIndex)))
+    }
+
+    /// Called when THIS device opens an EXISTING session from the sidebar.
+    /// Increments the open-count and notifies peers so they keep the session alive.
+    @MainActor
+    func joinAnnotationSession(id: UUID) {
+        guard let session = liveSessions[id] else { return }
+        sessionOpenCounts[id, default: 0] += 1
+        locallyOpenSessionCount[id, default: 0] += 1
+        sharePlay.send(DICOMSyncMessage(kind: .annotationSessionOpened(sessionID: id, sliceIndex: session.sliceIndex)))
+    }
+
+    /// Called when THIS device closes an annotation window.
+    /// Decrements the count; removes the session everywhere when it hits zero.
+    @MainActor
+    func closeAnnotationSession(id: UUID) {
+        locallyOpenSessionCount[id, default: 0] = max(0, (locallyOpenSessionCount[id] ?? 0) - 1)
+        if locallyOpenSessionCount[id] == 0 { locallyOpenSessionCount.removeValue(forKey: id) }
+
+        let newCount = max(0, (sessionOpenCounts[id] ?? 0) - 1)
+        sessionOpenCounts[id] = newCount
+        if newCount == 0 {
+            liveSessions.removeValue(forKey: id)
+            sessionOpenCounts.removeValue(forKey: id)
+        }
+        sharePlay.send(DICOMSyncMessage(kind: .annotationSessionClosed(sessionID: id)))
+    }
+
+    // MARK: - Annotation session lifecycle (remote messages)
+
+    /// A remote peer opened (or re-opened) an annotation window for the given session.
+    @MainActor
+    func remoteAnnotationSessionOpened(sessionID: UUID, sliceIndex: Int) {
+        if liveSessions[sessionID] != nil {
+            sessionOpenCounts[sessionID, default: 0] += 1
+        } else {
+            guard sliceIndex >= 0, sliceIndex < sliceImages.count else { return }
+            let image = sliceImages[sliceIndex]
+            liveSessions[sessionID] = LiveAnnotationSession(id: sessionID, sliceIndex: sliceIndex, frozenImage: image)
+            sessionOpenCounts[sessionID] = 1
         }
     }
 
-    /// Call when an annotation window closes on this device.
-    /// Sends `annotationPanelClosed` via SharePlay when the last local window closes.
+    /// A remote peer closed their annotation window for the given session.
     @MainActor
-    func annotationWindowClosed() {
-        localAnnotationWindowCount = max(0, localAnnotationWindowCount - 1)
-        if localAnnotationWindowCount == 0 {
-            sharePlay.send(DICOMSyncMessage(kind: .annotationPanelClosed))
-            if remoteAnnotatorCount == 0 {
-                // Session is fully over — clear strokes.
-                annotationPanelStrokes = [:]
-            }
+    func remoteAnnotationSessionClosed(sessionID: UUID) {
+        let newCount = max(0, (sessionOpenCounts[sessionID] ?? 0) - 1)
+        sessionOpenCounts[sessionID] = newCount
+        if newCount == 0 {
+            liveSessions.removeValue(forKey: sessionID)
+            sessionOpenCounts.removeValue(forKey: sessionID)
         }
     }
 
-    /// Live annotation strokes shown in the shared panel.
-    /// Keyed by strokeID so incoming points can be appended to the right stroke.
-    var annotationPanelStrokes: [UUID: AnnotationPanelStroke] = [:]
+    // MARK: - Stroke management
 
-
-    /// Removes only the specified strokes from the shared panel.
-    /// Does NOT send a SharePlay message — callers are responsible for broadcasting first.
-    @MainActor
-    func removeAnnotationStrokes(ids: Set<UUID>) {
-        for id in ids { annotationPanelStrokes.removeValue(forKey: id) }
-    }
-
-    /// Appends an incoming (local or remote) 2-D annotation point to the panel strokes.
+    /// Appends an incoming (local or remote) 2-D annotation point to the correct session.
     @MainActor
     func receiveAnnotation2DPoint(_ msg: Annotation2DPointMessage) {
+        guard liveSessions[msg.sessionID] != nil else { return }
         let pt = CGPoint(x: CGFloat(msg.x), y: CGFloat(msg.y))
         let color = Color(red: Double(msg.colorR), green: Double(msg.colorG), blue: Double(msg.colorB))
         if msg.isStart {
-            annotationPanelStrokes[msg.strokeID] = AnnotationPanelStroke(
+            liveSessions[msg.sessionID]?.strokes[msg.strokeID] = AnnotationPanelStroke(
                 id: msg.strokeID,
                 points: [pt],
                 color: color,
                 lineWidth: CGFloat(msg.lineWidth)
             )
         } else {
-            annotationPanelStrokes[msg.strokeID]?.points.append(pt)
+            liveSessions[msg.sessionID]?.strokes[msg.strokeID]?.points.append(pt)
         }
+    }
+
+    /// Removes a set of strokes from a specific session.
+    /// Does NOT send a SharePlay message — callers broadcast first, then call this.
+    @MainActor
+    func removeAnnotationStrokes(sessionID: UUID, ids: Set<UUID>) {
+        for id in ids { liveSessions[sessionID]?.strokes.removeValue(forKey: id) }
     }
 
     // MARK: - Init
@@ -208,13 +265,10 @@ final class DICOMStore {
         case .presetChanged(let rawValue):
             guard let preset = MedicalPreset(rawValue: rawValue) else { return }
             selectedPreset = preset
-        case .annotationPanelOpened:
-            remoteAnnotatorCount += 1
-        case .annotationPanelClosed:
-            remoteAnnotatorCount = max(0, remoteAnnotatorCount - 1)
-            if remoteAnnotatorCount == 0 && localAnnotationWindowCount == 0 {
-                annotationPanelStrokes = [:]
-            }
+        case .annotationSessionOpened(let sessionID, let sliceIndex):
+            remoteAnnotationSessionOpened(sessionID: sessionID, sliceIndex: sliceIndex)
+        case .annotationSessionClosed(let sessionID):
+            remoteAnnotationSessionClosed(sessionID: sessionID)
         case .drawingSpaceOpened:
             isDrawingActive = true
         case .drawingSpaceClosed:

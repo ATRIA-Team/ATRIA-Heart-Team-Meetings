@@ -281,11 +281,11 @@ final class SharePlayCoordinator {
     }
 
     /// Broadcasts a targeted stroke-removal command to all peers via the reliable messenger.
-    /// Only the strokes whose IDs are listed will be removed; others are preserved.
-    func sendRemoveAnnotationStrokes(ids: Set<UUID>) {
+    /// Only the strokes whose IDs are listed will be removed from the given session; others are preserved.
+    func sendRemoveAnnotationStrokes(sessionID: UUID, ids: Set<UUID>) {
         guard isInSession, !ids.isEmpty, let messenger else { return }
         Task {
-            try? await messenger.send(DICOMSyncMessage(kind: .removeAnnotationStrokes(strokeIDs: Array(ids))))
+            try? await messenger.send(DICOMSyncMessage(kind: .removeAnnotationStrokes(sessionID: sessionID, strokeIDs: Array(ids))))
         }
     }
 
@@ -317,14 +317,26 @@ final class SharePlayCoordinator {
         // Re-broadcast our own ready state whenever new remote peers arrive,
         // so they learn we're already ready without needing another import.
         let newRemoteArrivals = newArrivals.subtracting([localParticipant.id])
-        if !newRemoteArrivals.isEmpty,
-           participantStates[localParticipant.id]?.isReady == true,
-           let store {
-            broadcastReady(
-                sliceCount: store.sliceCount,
-                seriesDescription: store.seriesDescription,
-                patientName: store.patientName
-            )
+        if !newRemoteArrivals.isEmpty, let store {
+            if participantStates[localParticipant.id]?.isReady == true {
+                broadcastReady(
+                    sliceCount: store.sliceCount,
+                    seriesDescription: store.seriesDescription,
+                    patientName: store.patientName
+                )
+            }
+
+            // Re-broadcast every annotation session this device currently has open
+            // so the late joiner learns about active sessions immediately.
+            for (sessionID, count) in store.locallyOpenSessionCount where count > 0 {
+                guard let session = store.liveSessions[sessionID] else { continue }
+                for _ in 0..<count {
+                    send(DICOMSyncMessage(kind: .annotationSessionOpened(
+                        sessionID: sessionID,
+                        sliceIndex: session.sliceIndex
+                    )))
+                }
+            }
         }
     }
 
@@ -350,7 +362,7 @@ final class SharePlayCoordinator {
             participantStates[participant.id]?.seriesDescription = ""
             participantStates[participant.id]?.patientName = ""
 
-        case .sliceChanged, .presetChanged, .annotationPanelOpened, .annotationPanelClosed, .drawingSpaceOpened, .drawingSpaceClosed:
+        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed, .drawingSpaceOpened, .drawingSpaceClosed:
             // Guard against echo: the didSet observers on DICOMStore check
             // isApplyingRemoteChange and skip re-broadcasting when it is raised.
             isApplyingRemoteChange = true
@@ -360,8 +372,8 @@ final class SharePlayCoordinator {
         case .clearDrawings:
             store?.drawing.receiveClearDrawings()
 
-        case .removeAnnotationStrokes(let strokeIDs):
-            store?.removeAnnotationStrokes(ids: Set(strokeIDs))
+        case .removeAnnotationStrokes(let sessionID, let strokeIDs):
+            store?.removeAnnotationStrokes(sessionID: sessionID, ids: Set(strokeIDs))
         }
     }
 

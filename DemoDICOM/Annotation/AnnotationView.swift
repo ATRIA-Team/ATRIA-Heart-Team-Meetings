@@ -9,11 +9,18 @@ import UIKit
 
 /// A dedicated 2-D annotation window opened from the slice viewer.
 ///
-/// The user opens this window by pinching and holding on the CT scan image.
-/// Drawing is done with Apple Pencil Pro directly on the window surface.
-/// Tapping "Save" composites the slice and strokes into a PNG and persists it
-/// via SwiftData so it appears in the Annotations tab.
+/// Each window is tied to a `sessionID` which identifies one `LiveAnnotationSession`
+/// in `DICOMStore.liveSessions`. The session holds a frozen `CGImage` — the DICOM
+/// slice as it appeared at the moment the annotation was opened — so scrolling the
+/// main viewer's slider or changing the preset has no effect on this canvas.
+///
+/// Multiple windows (for different sessions) can be open simultaneously. Opening the
+/// same session ID a second time focuses the existing window rather than creating a
+/// duplicate, thanks to visionOS `WindowGroup(id:for:)` behaviour.
 struct AnnotationView: View {
+
+    /// The session this window belongs to.
+    let sessionID: UUID
 
     @Environment(DICOMStore.self) private var store
     @Environment(\.modelContext) private var modelContext
@@ -22,47 +29,71 @@ struct AnnotationView: View {
     @State private var brushColor: Color   = .red
     @State private var brushSize:  CGFloat = 3.0
     @State private var showSavedConfirmation = false
-    /// Stroke IDs produced by this device's PencilCanvas.
-    /// Used to exclude them from AnnotationStrokesView so they aren't rendered twice
-    /// (PencilCanvas already draws them locally with immediate UIKit feedback).
+    /// Stroke IDs produced by THIS device's PencilCanvas.
+    /// Used to skip them in AnnotationStrokesView so they aren't double-rendered.
     @State private var localStrokeIDs: Set<UUID> = []
+    /// The frozen DICOM image captured when the session was created or joined.
+    /// Stored in @State so it survives any store mutations (preset changes, slider).
+    @State private var frozenImage: CGImage? = nil
 
     var body: some View {
         NavigationStack {
             contentArea
-                .navigationTitle(
-                    "Annotate — Slice \(store.currentSliceIndex + 1) / \(store.sliceCount)"
-                )
+                .navigationTitle(navigationTitle)
                 .toolbar { toolbarContent }
                 .overlay(alignment: .top) {
-                    if showSavedConfirmation {
-                        savedBanner
-                    }
+                    if showSavedConfirmation { savedBanner }
                 }
         }
         .onAppear {
             localStrokeIDs = []
-            store.annotationWindowOpened()
+            if store.liveSessions[sessionID] == nil {
+                // Brand-new session: freeze current slice and register with the store.
+                if let image = store.currentSliceImage {
+                    frozenImage = image
+                    store.createAnnotationSession(
+                        id: sessionID,
+                        sliceIndex: store.currentSliceIndex,
+                        image: image
+                    )
+                }
+            } else {
+                // Joining an existing session from the sidebar.
+                frozenImage = store.liveSessions[sessionID]?.frozenImage
+                store.joinAnnotationSession(id: sessionID)
+            }
         }
         .onDisappear {
-            store.isAnnotationWindowOpen = false
-            store.annotationWindowClosed()
+            store.closeAnnotationSession(id: sessionID)
         }
+    }
+
+    // MARK: - Helpers
+
+    private var navigationTitle: String {
+        if let session = store.liveSessions[sessionID] {
+            return "Annotate — Slice \(session.sliceIndex + 1)"
+        }
+        return "Annotate"
     }
 
     // MARK: - Content area
 
     @ViewBuilder
     private var contentArea: some View {
-        if let cgImage = store.currentSliceImage {
+        // Use the captured frozen image; fall back to the store value briefly
+        // on the first render before onAppear has fired.
+        let displayImage = frozenImage ?? store.liveSessions[sessionID]?.frozenImage
+
+        if let cgImage = displayImage {
+            let sessionStrokes = store.liveSessions[sessionID]?.strokes ?? [:]
             Image(decorative: cgImage, scale: 1.0)
                 .resizable()
                 .scaledToFit()
                 .overlay {
-                    // Remote strokes from other participants — exclude local ones
-                    // which are already rendered by PencilCanvas with immediate feedback.
+                    // Remote strokes — skip local ones already rendered by PencilCanvas.
                     AnnotationStrokesView(
-                        strokes: store.annotationPanelStrokes.values.filter {
+                        strokes: sessionStrokes.values.filter {
                             !localStrokeIDs.contains($0.id)
                         }
                     )
@@ -73,9 +104,9 @@ struct AnnotationView: View {
                         brushColor: brushColor,
                         brushSize:  brushSize,
                         onAnnotationPoint: { strokeID, normalizedPoint, isStart, isEnd, r, g, b, lineWidth in
-                            // Track this as a local stroke so AnnotationStrokesView skips it.
                             localStrokeIDs.insert(strokeID)
                             let msg = Annotation2DPointMessage(
+                                sessionID: sessionID,
                                 strokeID: strokeID,
                                 x: Float(normalizedPoint.x),
                                 y: Float(normalizedPoint.y),
@@ -84,7 +115,6 @@ struct AnnotationView: View {
                                 colorR: r, colorG: g, colorB: b,
                                 lineWidth: lineWidth
                             )
-                            // Update local panel immediately, then broadcast to peers.
                             store.receiveAnnotation2DPoint(msg)
                             store.sharePlay.sendAnnotation2DPoint(msg)
                         }
@@ -114,14 +144,11 @@ struct AnnotationView: View {
     // MARK: - Save
 
     private func saveAnnotation() {
-        guard let cgImage = store.currentSliceImage,
+        guard let cgImage = frozenImage ?? store.liveSessions[sessionID]?.frozenImage,
               let base = canvasState.snapshot(backgroundCGImage: cgImage) else { return }
 
-        // Composite remote strokes (from other SharePlay participants) on top of the
-        // local snapshot. Local strokes are already baked in by PencilCanvasUIView.snapshot().
-        let remoteStrokes = store.annotationPanelStrokes.values.filter {
-            !localStrokeIDs.contains($0.id)
-        }
+        let sessionStrokes = store.liveSessions[sessionID]?.strokes ?? [:]
+        let remoteStrokes = sessionStrokes.values.filter { !localStrokeIDs.contains($0.id) }
 
         let finalImage: UIImage
         if remoteStrokes.isEmpty {
@@ -150,22 +177,19 @@ struct AnnotationView: View {
 
         guard let pngData = finalImage.pngData() else { return }
 
+        let sliceIndex = store.liveSessions[sessionID]?.sliceIndex ?? store.currentSliceIndex
         let annotation = SavedAnnotation(
-            sliceIndex:         store.currentSliceIndex,
+            sliceIndex:         sliceIndex,
             patientName:        store.patientName,
             seriesDescription:  store.seriesDescription,
             imageData:          pngData
         )
         modelContext.insert(annotation)
 
-        withAnimation {
-            showSavedConfirmation = true
-        }
+        withAnimation { showSavedConfirmation = true }
         Task {
             try? await Task.sleep(for: .seconds(2))
-            withAnimation {
-                showSavedConfirmation = false
-            }
+            withAnimation { showSavedConfirmation = false }
         }
     }
 
@@ -206,7 +230,6 @@ struct AnnotationView: View {
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
-            // Save composite image to the Annotations tab
             Button {
                 saveAnnotation()
             } label: {
@@ -214,7 +237,6 @@ struct AnnotationView: View {
             }
             .disabled(canvasState.strokeCount == 0)
 
-            // Undo last stroke
             Button {
                 canvasState.undo()
             } label: {
@@ -222,11 +244,10 @@ struct AnnotationView: View {
             }
             .disabled(canvasState.strokeCount == 0)
 
-            // Remove only this device's own strokes — collaborators' strokes are preserved
             Button(role: .destructive) {
                 let ids = localStrokeIDs
-                store.sharePlay.sendRemoveAnnotationStrokes(ids: ids)
-                store.removeAnnotationStrokes(ids: ids)
+                store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: ids)
+                store.removeAnnotationStrokes(sessionID: sessionID, ids: ids)
                 canvasState.removeStrokes(ids: ids)
                 localStrokeIDs = []
             } label: {
