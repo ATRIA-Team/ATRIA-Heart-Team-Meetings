@@ -76,6 +76,12 @@ final class DICOMStore {
     /// Whether the HTML file picker is currently showing.
     var isShowingHTMLFilePicker = false
 
+    /// URL of the PDF file selected by the user for the PDF viewer window.
+    var pdfFileURL: URL?
+
+    /// Whether the PDF file picker is currently showing.
+    var isShowingPDFFilePicker = false
+
     // MARK: - Live annotation sessions
 
     /// All currently active annotation sessions, keyed by session ID.

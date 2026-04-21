@@ -81,6 +81,11 @@ struct ContentView: View {
                     } label: {
                         Label("Import CT Scan", systemImage: "folder.badge.plus")
                     }
+                    Button {
+                        store.isShowingPDFFilePicker = true
+                    } label: {
+                        Label("Open PDF", systemImage: "rectangle.and.paperclip")
+                    }
                 }
             }
             .overlay {
@@ -111,6 +116,21 @@ struct ContentView: View {
                 }
             case .failure(let error):
                 store.errorMessage = "HTML file picker error: \(error.localizedDescription)"
+            }
+        }
+        .fileImporter(
+            isPresented: $store.isShowingPDFFilePicker,
+            allowedContentTypes: [.pdf],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    store.pdfFileURL = url
+                    openWindow(id: "pdfViewer")
+                }
+            case .failure(let error):
+                store.errorMessage = "PDF file picker error: \(error.localizedDescription)"
             }
         }
         // Disable window interaction while drawing so the stylus button
