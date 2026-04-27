@@ -61,7 +61,7 @@ struct DemoDICOMApp: App {
             PDFViewerWindow()
                 .environment(store)
         }
-        .defaultSize(width: 800, height: 600)
+        .defaultSize(width: 1600, height: 1200)
 
         // Mixed-immersion drawing space.
         // Opened/dismissed from ContentView via openImmersiveSpace / dismissImmersiveSpace.

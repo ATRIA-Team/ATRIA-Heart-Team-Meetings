@@ -17,7 +17,7 @@ struct PDFViewerWindow: View {
             } else {
                 ContentUnavailableView(
                     "No File Loaded",
-                    systemImage: "doc.pdf",
+                    systemImage: "exclamationmark.triangle",
                     description: Text("Open a PDF file from the toolbar.")
                 )
             }
@@ -72,4 +72,10 @@ struct PDFViewRepresentable: UIViewRepresentable {
 
         deinit { stopAccess() }
     }
+}
+
+#Preview {
+    ContentUnavailableView("Content unavailable",
+                           systemImage: "exclamationmark.triangle",
+                           description: Text("Open a PDF file from the toolbar."))
 }
