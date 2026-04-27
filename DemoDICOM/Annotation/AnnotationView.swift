@@ -238,7 +238,11 @@ struct AnnotationView: View {
             .disabled(canvasState.strokeCount == 0)
 
             Button {
-                canvasState.undo()
+                if let undoneID = canvasState.undo() {
+                    localStrokeIDs.remove(undoneID)
+                    store.removeAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
+                    store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
+                }
             } label: {
                 Label("Undo", systemImage: "arrow.uturn.backward")
             }
