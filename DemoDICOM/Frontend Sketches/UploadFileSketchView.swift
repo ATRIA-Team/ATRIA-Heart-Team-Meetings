@@ -11,6 +11,7 @@ struct UploadFileSketchView: View {
     
     @State private var isShareplayActive: Bool = false
     @State private var isShareplayMeeting: Bool = false
+    @State private var isFileLoaded: Bool = false
     
     @State private var showAlert = false
     
@@ -72,15 +73,15 @@ struct UploadFileSketchView: View {
                     .buttonBorderShape(.roundedRectangle)
                     
                     Button {
-                        
+                        isFileLoaded.toggle()
                     } label: {
                         HStack {
                             Circle()
-                                .foregroundStyle(Color.yellow)
+                                .foregroundStyle(!isFileLoaded ? Color.yellow : Color.green)
                                 .frame(width: 55, height: 55)
                                 .padding(5)
                                 .overlay {
-                                    Image(systemName: "person.fill.questionmark")
+                                    Image(systemName: !isFileLoaded ? "person.fill.questionmark" : "person.fill.checkmark")
                                         .font(.system(size: 25))
                                 }
                             VStack(alignment: .leading) {
