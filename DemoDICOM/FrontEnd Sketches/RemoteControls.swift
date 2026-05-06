@@ -14,17 +14,17 @@ struct RemoteControls: View {
         VStack(alignment: .leading, spacing: 30) {
             
             HStack(spacing: 30) {
-                RemoteControlButton(icon: "list.bullet.clipboard.fill", label: "Medical History") { }
-                RemoteControlButton(icon: "stethoscope", label: "Vitals") { }
-                RemoteControlButton(icon: "drop.fill", label: "Blood Tests") { }
-                RemoteControlButton(icon: "waveform.path.ecg.text.clipboard.fill", label: "Echo") { }
+                RemoteControlButton(icon: "list.bullet.clipboard.fill", text: "Medical History") { }
+                RemoteControlButton(icon: "stethoscope", text:  "Vitals") { }
+                RemoteControlButton(icon: "drop.fill", text:  "Blood Tests") { }
+                RemoteControlButton(icon: "waveform.path.ecg.text.clipboard.fill", text:  "Echo") { }
             }
             
             HStack(spacing: 30) {
-                RemoteControlButton(icon: "waveform.path.ecg.rectangle.fill", label: "CT") { }
-                RemoteControlButton(icon: "heart.fill", label: "Coro") { }
-                RemoteControlButton(icon: "heart.text.clipboard.fill", label: "Other") { }
-                RemoteControlButton(icon: "", label: "") {
+                RemoteControlButton(icon: "waveform.path.ecg.rectangle.fill", text:  "CT") { }
+                RemoteControlButton(icon: "heart.fill", text:  "Coro") { }
+                RemoteControlButton(icon: "heart.text.clipboard.fill", text:  "Other") { }
+                RemoteControlButton(icon: "", text:  "") {
                     
                 }
             }
