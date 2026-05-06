@@ -58,11 +58,12 @@ struct SketchCard: View {
     var body: some View {
         HStack(spacing: 16) {
             RoundedRectangle(cornerRadius: 8)
-                .fill(LinearGradient(
-                    gradient: Gradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
+                .fill(Color.white)
+//                .fill(LinearGradient(
+//                    gradient: Gradient(colors: [.blue.opacity(0.3), .purple.opacity(0.3)]),
+//                    startPoint: .topLeading,
+//                    endPoint: .bottomTrailing
+//                ))
                 .frame(width: 80, height: 80)
 
             VStack(alignment: .leading, spacing: 4) {
