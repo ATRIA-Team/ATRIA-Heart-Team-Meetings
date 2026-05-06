@@ -82,6 +82,43 @@ final class DICOMStore {
     /// Whether the PDF file picker is currently showing.
     var isShowingPDFFilePicker = false
 
+    /// URL of the blood test file selected by the user.
+    var bloodTestURL: URL? {
+        didSet {
+            if let url = bloodTestURL {
+                sharePlay.broadcastExamReady(
+                    type: .bloodTests,
+                    metadata: .bloodTests(fileName: url.deletingPathExtension().lastPathComponent)
+                )
+            } else {
+                sharePlay.broadcastExamNotReady(type: .bloodTests)
+            }
+        }
+    }
+
+    /// URL of the medical record file selected by the user.
+    var medicalRecordURL: URL? {
+        didSet {
+            if let url = medicalRecordURL {
+                sharePlay.broadcastExamReady(
+                    type: .medicalRecord,
+                    metadata: .medicalRecord(fileName: url.deletingPathExtension().lastPathComponent)
+                )
+            } else {
+                sharePlay.broadcastExamNotReady(type: .medicalRecord)
+            }
+        }
+    }
+
+    var bloodTestFileName: String? { bloodTestURL?.deletingPathExtension().lastPathComponent }
+    var medicalRecordFileName: String? { medicalRecordURL?.deletingPathExtension().lastPathComponent }
+
+    /// Whether the blood test file picker should be presented (wired up later).
+    var isShowingBloodTestPicker: Bool = false
+
+    /// Whether the medical record file picker should be presented (wired up later).
+    var isShowingMedicalRecordPicker: Bool = false
+
     // MARK: - Live annotation sessions
 
     /// All currently active annotation sessions, keyed by session ID.
@@ -279,7 +316,7 @@ final class DICOMStore {
             isDrawingActive = true
         case .drawingSpaceClosed:
             isDrawingActive = false
-        case .participantReady, .participantNotReady, .clearDrawings, .removeAnnotationStrokes:
+        case .examReady, .examNotReady, .clearDrawings, .removeAnnotationStrokes:
             // Handled directly in SharePlayCoordinator.apply(), not by the store.
             break
         }
@@ -296,7 +333,7 @@ final class DICOMStore {
         rawPixelBuffers16 = []
         currentSliceIndex = 0
         // Signal to peers that we are re-loading and not yet ready to view.
-        sharePlay.broadcastNotReady()
+        sharePlay.broadcastExamNotReady(type: .dicom)
 
         Task.detached { [weak self] in
             guard let self else { return }
@@ -467,11 +504,14 @@ final class DICOMStore {
                 self.seriesDescription = seriesInfo["SeriesDescription"] ?? ""
                 self.modality = modalityStr
                 self.isLoading = false
-                // Notify peers that this participant has finished loading and is ready.
-                self.sharePlay.broadcastReady(
-                    sliceCount: images.count,
-                    seriesDescription: seriesInfo["SeriesDescription"] ?? "",
-                    patientName: patientInfo["Name"] ?? ""
+                // Notify peers that this participant has finished loading DICOM and is ready.
+                self.sharePlay.broadcastExamReady(
+                    type: .dicom,
+                    metadata: .dicom(
+                        sliceCount: images.count,
+                        seriesDescription: seriesInfo["SeriesDescription"] ?? "",
+                        patientName: patientInfo["Name"] ?? ""
+                    )
                 )
             }
             

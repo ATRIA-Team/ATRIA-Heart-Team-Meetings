@@ -217,17 +217,38 @@ struct LobbyView: View {
                 }
             }
         } else {
-            // Not yet loaded — show the import prompt
-            VStack(spacing: 10) {
-                Button {
-                    store.isShowingFolderPicker = true
-                } label: {
-                    Label("Import Your DICOM Folder", systemImage: "folder.badge.plus")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+            // Not yet loaded — pick which exam type to upload
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Select an exam to upload")
+                    .font(.headline)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 12) {
+                        RemoteControlButton(icon: "list.bullet.clipboard.fill", text: "Medical History") {
+                            store.isShowingFolderPicker = true
+                        }
+                        RemoteControlButton(icon: "stethoscope", text: "Vitals") {
+                            store.isShowingFolderPicker = true
+                        }
+                        RemoteControlButton(icon: "drop.fill", text: "Blood Tests") {
+                            store.isShowingFolderPicker = true
+                        }
+                        RemoteControlButton(icon: "waveform.path.ecg.text.clipboard.fill", text: "Echo") {
+                            store.isShowingFolderPicker = true
+                        }
+                    }
+                    HStack(spacing: 12) {
+                        RemoteControlButton(icon: "waveform.path.ecg.rectangle.fill", text: "CT") {
+                            store.isShowingFolderPicker = true
+                        }
+                        RemoteControlButton(icon: "heart.fill", text: "Coro") {
+                            store.isShowingFolderPicker = true
+                        }
+                        RemoteControlButton(icon: "heart.text.clipboard.fill", text: "Other") {
+                            store.isShowingFolderPicker = true
+                        }
+                    }
                 }
-                .buttonStyle(.borderedProminent)
 
                 Text("Load the same DICOM folder as your session partners.")
                     .font(.caption)

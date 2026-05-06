@@ -5,10 +5,33 @@
 
 import Foundation
 
+// MARK: - ExamType
+
+/// The set of exam types participants can load for a collaborative session.
+enum ExamType: String, Codable, CaseIterable, Hashable {
+    case dicom
+    case bloodTests
+    case medicalRecord
+
+    /// Every exam type every participant must have loaded before the session can start.
+    static var allRequired: Set<ExamType> { Set(ExamType.allCases) }
+}
+
+// MARK: - ExamMetadata
+
+/// Lightweight lobby metadata for one loaded exam — never contains pixel data or file contents.
+enum ExamMetadata: Codable {
+    case dicom(sliceCount: Int, seriesDescription: String, patientName: String)
+    case bloodTests(fileName: String)
+    case medicalRecord(fileName: String)
+}
+
+// MARK: - DICOMSyncMessage
+
 /// A lightweight message exchanged between SharePlay participants.
 ///
-/// Only control signals cross the wire — no DICOM pixel data is ever transmitted.
-/// Pixel data always stays on each device's local storage.
+/// Only control signals cross the wire — no pixel data or file contents are ever transmitted.
+/// Each participant loads their own local copy of every exam file.
 struct DICOMSyncMessage: Codable {
 
     enum Kind: Codable {
@@ -22,10 +45,11 @@ struct DICOMSyncMessage: Codable {
 
         // MARK: - Lobby readiness (sent during lobby phase)
 
-        /// A participant has finished loading their local DICOM folder.
-        case participantReady(sliceCount: Int, seriesDescription: String, patientName: String)
-        /// A participant cleared their data or started a fresh import.
-        case participantNotReady
+        /// A participant finished loading one exam type.
+        case examReady(type: ExamType, metadata: ExamMetadata)
+        /// A participant cleared or re-started loading one exam type.
+        case examNotReady(type: ExamType)
+
         /// A participant (local or remote) cleared all 3D immersive drawings.
         case clearDrawings
         /// A participant removed a specific set of their own 2D annotation strokes
@@ -35,12 +59,8 @@ struct DICOMSyncMessage: Codable {
         // MARK: - Annotation Sessions
 
         /// A participant opened (or re-opened) an annotation window for the given session.
-        /// `sliceIndex` tells receiving peers which slice to freeze as the session background.
-        /// Receivers increment the session's open-count; if the session is unknown they create it.
         case annotationSessionOpened(sessionID: UUID, sliceIndex: Int)
-
         /// A participant closed their annotation window for the given session.
-        /// Receivers decrement the session's open-count and remove it when it reaches zero.
         case annotationSessionClosed(sessionID: UUID)
 
         // MARK: - Drawing Space

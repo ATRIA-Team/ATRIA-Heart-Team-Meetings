@@ -14,6 +14,7 @@ struct HomeView2: View {
     @State private var noMeetings: Bool = true
     @State private var showCaptures: Bool = false
     @State private var showDICOMViewer: Bool = false
+    @State private var showLobby: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -67,7 +68,9 @@ struct HomeView2: View {
             VStack(spacing: 30) {
 
                 HStack(spacing: 30) {
-                    RemoteControlButton(icon: "folder.fill.badge.plus", text: "Upload Files") {}
+                    RemoteControlButton(icon: "folder.fill.badge.plus", text: "Upload Files") {
+                        showLobby = true
+                    }
                     RemoteControlButton(
                         icon: store.sharePlay.isInSession ? "shareplay" : "video.fill",
                         text: store.sharePlay.isInSession
@@ -98,6 +101,9 @@ struct HomeView2: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(store.sharePlay.activationError ?? "")
+        }
+        .navigationDestination(isPresented: $showLobby) {
+            LobbyView()
         }
         .navigationDestination(isPresented: $showCaptures) {
             SavedAnnotationsView()

@@ -27,6 +27,7 @@ struct DemoDICOMApp: App {
             RootView()
                 .environment(store)
         }
+        .defaultSize(width: 1920, height: 1080)
         .modelContainer(annotationContainer)
 
         // 2-D annotation window — one independent window per session UUID.
