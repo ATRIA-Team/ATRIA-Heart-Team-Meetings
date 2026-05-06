@@ -11,7 +11,7 @@ struct RemoteControls: View {
     
     var body: some View {
         
-        VStack(spacing: 30) {
+        VStack(alignment: .leading, spacing: 30) {
             
             HStack(spacing: 30) {
                 RemoteControlButton(icon: "list.bullet.clipboard.fill", label: "Medical History") { }
@@ -27,6 +27,15 @@ struct RemoteControls: View {
                 RemoteControlButton(icon: "", label: "") {
                     
                 }
+            }
+            
+            HStack {
+                
+                Image(systemName: "hand.pinch.fill")
+                
+                Text("Pinch to open a view locally • Pinch and hold to share to all participants.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
