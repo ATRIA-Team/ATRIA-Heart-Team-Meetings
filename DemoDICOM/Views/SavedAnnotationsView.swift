@@ -18,6 +18,7 @@ struct SavedAnnotationsView: View {
     private var annotations: [SavedAnnotation]
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
 
     private let columns = [GridItem(.adaptive(minimum: 210), spacing: 16)]
 

@@ -8,11 +8,15 @@
 import SwiftUI
 
 struct HomeView2: View {
-    
+
+    @Environment(DICOMStore.self) private var store
+
     @State private var noMeetings: Bool = true
-    
+    @State private var showCaptures: Bool = false
+    @State private var showDICOMViewer: Bool = false
+
     var body: some View {
-        
+        NavigationStack {
         HStack(spacing: 150) {
             
             Rectangle()
@@ -64,15 +68,44 @@ struct HomeView2: View {
 
                 HStack(spacing: 30) {
                     RemoteControlButton(icon: "folder.fill.badge.plus", text: "Upload Files") {}
-                    RemoteControlButton(icon: "video.fill", text: "Start meeting") {}
+                    RemoteControlButton(
+                        icon: store.sharePlay.isInSession ? "shareplay" : "video.fill",
+                        text: store.sharePlay.isInSession
+                            ? "\(store.sharePlay.participantCount) in session"
+                            : (store.sharePlay.isEligibleForGroupSession ? "Invite to SharePlay" : "Start meeting")
+                    ) {
+                        Task { await store.sharePlay.activate() }
+                    }
                 }
 
                 HStack(spacing: 30) {
-                    RemoteControlButton(icon: "document.on.document.fill", text: "Captures") {}
-                    RemoteControlButton(icon: "eye.circle.fill", text: "DICOM viewer") {}
+                    RemoteControlButton(icon: "document.on.document.fill", text: "Captures") {
+                        showCaptures = true
+                    }
+                    RemoteControlButton(icon: "eye.circle.fill", text: "DICOM viewer") {
+                        showDICOMViewer = true
+                    }
                 }
             }
         }
+        .alert(
+            "SharePlay Unavailable",
+            isPresented: Binding(
+                get: { store.sharePlay.activationError != nil },
+                set: { if !$0 { store.sharePlay.activationError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.sharePlay.activationError ?? "")
+        }
+        .navigationDestination(isPresented: $showCaptures) {
+            SavedAnnotationsView()
+        }
+        .navigationDestination(isPresented: $showDICOMViewer) {
+            ContentView()
+        }
+        } // NavigationStack
     }
 }
 

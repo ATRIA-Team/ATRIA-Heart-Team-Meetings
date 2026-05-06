@@ -66,9 +66,6 @@ struct ContentView: View {
             }
             .navigationTitle("DICOM Viewer")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    sharePlayButton
-                }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     drawingToggleButton
                     Button {
@@ -141,42 +138,6 @@ struct ContentView: View {
     }
 
     // MARK: - Subviews
-
-    /// Shows SharePlay session status, or an invitation button when not in session.
-    private var sharePlayButton: some View {
-        Group {
-            if store.sharePlay.isInSession {
-                Label(
-                    "\(store.sharePlay.participantCount) in session",
-                    systemImage: "shareplay"
-                )
-                .foregroundStyle(.green)
-                .labelStyle(.titleAndIcon)
-            } else {
-                Button {
-                    Task { await store.sharePlay.activate() }
-                } label: {
-                    Label(
-                        store.sharePlay.isEligibleForGroupSession
-                            ? "Invite to SharePlay"
-                            : "SharePlay",
-                        systemImage: "shareplay"
-                    )
-                }
-            }
-        }
-        .alert(
-            "SharePlay Unavailable",
-            isPresented: Binding(
-                get: { store.sharePlay.activationError != nil },
-                set: { if !$0 { store.sharePlay.activationError = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(store.sharePlay.activationError ?? "")
-        }
-    }
 
     private var emptyStateView: some View {
         VStack(spacing: 24) {
