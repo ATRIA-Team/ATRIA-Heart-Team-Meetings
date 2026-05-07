@@ -26,15 +26,21 @@ struct ParticipantReadyState: Identifiable {
     // MARK: Convenience accessors for LobbyView
 
     var sliceCount: Int {
-        if case .dicom(let count, _, _) = examMetadata[.dicom] { return count }
+        for examType in [ExamType.ct, .echo, .coro] {
+            if case .dicom(let count, _, _) = examMetadata[examType] { return count }
+        }
         return 0
     }
     var seriesDescription: String {
-        if case .dicom(_, let desc, _) = examMetadata[.dicom] { return desc }
+        for examType in [ExamType.ct, .echo, .coro] {
+            if case .dicom(_, let desc, _) = examMetadata[examType] { return desc }
+        }
         return ""
     }
     var patientName: String {
-        if case .dicom(_, _, let name) = examMetadata[.dicom] { return name }
+        for examType in [ExamType.ct, .echo, .coro] {
+            if case .dicom(_, _, let name) = examMetadata[examType] { return name }
+        }
         return ""
     }
 }
@@ -161,24 +167,7 @@ final class SharePlayCoordinator {
 
         // If the store already has data loaded before SharePlay started,
         // immediately broadcast readiness for each exam type already loaded.
-        if let store {
-            if store.sliceCount > 0 {
-                broadcastExamReady(
-                    type: .dicom,
-                    metadata: .dicom(
-                        sliceCount: store.sliceCount,
-                        seriesDescription: store.seriesDescription,
-                        patientName: store.patientName
-                    )
-                )
-            }
-            if let fileName = store.bloodTestFileName {
-                broadcastExamReady(type: .bloodTests, metadata: .bloodTests(fileName: fileName))
-            }
-            if let fileName = store.medicalRecordFileName {
-                broadcastExamReady(type: .medicalRecord, metadata: .medicalRecord(fileName: fileName))
-            }
-        }
+        store?.broadcastAllLoadedExams()
 
         sessionTasks.append(Task { @MainActor [weak self] in
             guard let self else { return }
@@ -225,18 +214,30 @@ final class SharePlayCoordinator {
     @MainActor
     func broadcastExamReady(type examType: ExamType, metadata: ExamMetadata) {
         guard isInSession, let localID = localParticipantID else { return }
-        participantStates[localID]?.loadedExams.insert(examType)
-        participantStates[localID]?.examMetadata[examType] = metadata
-        checkSessionStart()
+        var state = participantStates[localID]
+        state?.loadedExams.insert(examType)
+        state?.examMetadata[examType] = metadata
+        participantStates[localID] = state
         send(DICOMSyncMessage(kind: .examReady(type: examType, metadata: metadata)))
+    }
+
+    /// Called when the local user taps the Start Session button.
+    /// Sets the session as started locally and notifies all peers.
+    @MainActor
+    func startSession() {
+        guard isInSession, allParticipantsReady else { return }
+        sessionHasStarted = true
+        send(DICOMSyncMessage(kind: .sessionStarted))
     }
 
     /// Marks one exam type as not-ready for the local participant and notifies all peers.
     @MainActor
     func broadcastExamNotReady(type examType: ExamType) {
         guard isInSession, let localID = localParticipantID else { return }
-        participantStates[localID]?.loadedExams.remove(examType)
-        participantStates[localID]?.examMetadata.removeValue(forKey: examType)
+        var state = participantStates[localID]
+        state?.loadedExams.remove(examType)
+        state?.examMetadata.removeValue(forKey: examType)
+        participantStates[localID] = state
         send(DICOMSyncMessage(kind: .examNotReady(type: examType)))
     }
 
@@ -303,12 +304,8 @@ final class SharePlayCoordinator {
 
         // Re-broadcast every exam type already loaded so late joiners learn our state.
         let newRemoteArrivals = newArrivals.subtracting([localParticipant.id])
-        if !newRemoteArrivals.isEmpty, let localState = participantStates[localParticipant.id] {
-            for examType in localState.loadedExams {
-                if let metadata = localState.examMetadata[examType] {
-                    broadcastExamReady(type: examType, metadata: metadata)
-                }
-            }
+        if !newRemoteArrivals.isEmpty {
+            store?.broadcastAllLoadedExams()
 
             // Re-broadcast every annotation session this device currently has open.
             if let store {
@@ -330,15 +327,21 @@ final class SharePlayCoordinator {
         switch message.kind {
 
         case .examReady(let examType, let metadata):
-            participantStates[participant.id]?.loadedExams.insert(examType)
-            participantStates[participant.id]?.examMetadata[examType] = metadata
-            checkSessionStart()
+            var state = participantStates[participant.id]
+            state?.loadedExams.insert(examType)
+            state?.examMetadata[examType] = metadata
+            participantStates[participant.id] = state
 
         case .examNotReady(let examType):
-            participantStates[participant.id]?.loadedExams.remove(examType)
+            var state = participantStates[participant.id]
+            state?.loadedExams.remove(examType)
+            participantStates[participant.id] = state
             participantStates[participant.id]?.examMetadata.removeValue(forKey: examType)
 
-        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed, .drawingSpaceOpened, .drawingSpaceClosed:
+        case .sessionStarted:
+            sessionHasStarted = true
+
+        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed, .drawingSpaceOpened, .drawingSpaceClosed, .sharedWindowChanged:
             isApplyingRemoteChange = true
             defer { isApplyingRemoteChange = false }
             store?.applySharePlayMessage(message)

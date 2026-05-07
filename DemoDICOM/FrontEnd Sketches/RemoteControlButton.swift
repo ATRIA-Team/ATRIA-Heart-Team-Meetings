@@ -12,11 +12,12 @@ struct RemoteControlButton: View {
     let icon: String
     let text: String
     let action: () -> Void
+    var longPressAction: (() -> Void)? = nil
     @State private var isHovered = false
 
     var body: some View {
-        
-        Button {
+
+        let button = Button {
             action()
         } label: {
             
@@ -60,9 +61,18 @@ struct RemoteControlButton: View {
         .frame(width: 160, height: 160)
         .contentShape(RoundedRectangle(cornerRadius: 20))
         .buttonBorderShape(.roundedRectangle(radius: 20))
+
+        if let longPressAction {
+            button.simultaneousGesture(
+                LongPressGesture(minimumDuration: 0.6).onEnded { _ in longPressAction() }
+            )
+        } else {
+            button
+        }
     }
 }
 
 #Preview(windowStyle: .automatic) {
-    RemoteControls()
+    RemoteControlsView()
+        .environment(DICOMStore())
 }

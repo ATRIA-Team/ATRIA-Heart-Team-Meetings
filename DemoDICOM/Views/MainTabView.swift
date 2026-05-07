@@ -13,7 +13,7 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             Tab("Viewer", systemImage: "doc.viewfinder") {
-                ContentView()
+                NavigationStack { ContentView() }
             }
             Tab("Annotations", systemImage: "pencil.and.list.clipboard") {
                 SavedAnnotationsView()

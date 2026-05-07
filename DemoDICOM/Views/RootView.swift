@@ -14,6 +14,7 @@ struct RootView: View {
 
     @Environment(DICOMStore.self) private var store
 
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
@@ -23,7 +24,7 @@ struct RootView: View {
             // officially started. Once `sessionHasStarted` latches to true, all
             // participants stay in the viewer even if a late joiner connects.
             if store.sharePlay.isInSession && !store.sharePlay.sessionHasStarted {
-                LobbyView()
+                NavigationStack { LobbyView() }
             } else {
                 HomeView2()
             }
@@ -32,6 +33,12 @@ struct RootView: View {
             // Listen for incoming GroupSessions for the lifetime of this scene.
             for await session in DICOMViewerActivity.sessions() {
                 await store.sharePlay.handleIncomingSession(session)
+            }
+        }
+        .onChange(of: store.sharePlay.sessionHasStarted) { _, started in
+            if started {
+                openWindow(id: "sharedWindow")
+                openWindow(id: "remoteControls")
             }
         }
         .onChange(of: store.isDrawingActive) { _, newValue in

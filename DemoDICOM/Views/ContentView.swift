@@ -39,96 +39,90 @@ struct ContentView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
+    private enum ActivePicker { case folder, html, pdf }
+    @State private var activePicker: ActivePicker? = nil
+    @State private var isPickerPresented = false
+
     var body: some View {
-        // `@Bindable` lets us derive SwiftUI bindings from the @Observable store
-        // for modifiers that require them (fileImporter, etc.).
         @Bindable var store = store
 
-        NavigationStack {
-            Group {
-                if store.sliceImages.isEmpty && !store.isLoading {
-                    emptyStateView
-                } else {
-                    sliceViewerView
+        Group {
+            if store.sliceImages.isEmpty && !store.isLoading {
+                emptyStateView
+            } else {
+                sliceViewerView
+            }
+        }
+        .navigationTitle("DICOM Viewer")
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if store.loadedDICOMExamTypes.count > 1 {
+                    Picker("Exam", selection: Binding(
+                        get: { store.selectedDICOMExamType ?? .ct },
+                        set: { store.selectedDICOMExamType = $0 }
+                    )) {
+                        ForEach(store.loadedDICOMExamTypes, id: \.self) { examType in
+                            Text(examType.displayName).tag(examType)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                 }
             }
-            .fileImporter(
-                isPresented: $store.isShowingFolderPicker,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result {
-                case .success(let urls):
-                    if let url = urls.first { store.importFolder(url: url) }
-                case .failure(let error):
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                drawingToggleButton
+                Button { activePicker = .html;   isPickerPresented = true } label: {
+                    Label("Open HTML", systemImage: "doc.richtext")
+                }
+                Button { activePicker = .folder; isPickerPresented = true } label: {
+                    Label("Import CT Scan", systemImage: "folder.badge.plus")
+                }
+                Button { activePicker = .pdf;    isPickerPresented = true } label: {
+                    Label("Open PDF", systemImage: "rectangle.and.paperclip")
+                }
+            }
+        }
+        .fileImporter(
+            isPresented: $isPickerPresented,
+            allowedContentTypes: {
+                switch activePicker {
+                case .folder: return [.folder]
+                case .html: return [.html]
+                case .pdf, nil: return [.pdf]
+                }
+            }(),
+            allowsMultipleSelection: false
+        ) { result in
+            defer { activePicker = nil }
+            guard case .success(let urls) = result, let url = urls.first else {
+                if case .failure(let error) = result {
                     store.errorMessage = "File picker error: \(error.localizedDescription)"
                 }
+                return
             }
-            .navigationTitle("DICOM Viewer")
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    drawingToggleButton
-                    Button {
-                        store.isShowingHTMLFilePicker = true
-                    } label: {
-                        Label("Open HTML", systemImage: "doc.richtext")
-                    }
-                    Button {
-                        store.isShowingFolderPicker = true
-                    } label: {
-                        Label("Import CT Scan", systemImage: "folder.badge.plus")
-                    }
-                    Button {
-                        store.isShowingPDFFilePicker = true
-                    } label: {
-                        Label("Open PDF", systemImage: "rectangle.and.paperclip")
-                    }
-                }
-            }
-            .overlay {
-                if store.isLoading { loadingOverlay }
-            }
-            .alert(
-                "Error",
-                isPresented: Binding(
-                    get: { store.errorMessage != nil },
-                    set: { if !$0 { store.errorMessage = nil } }
-                )
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(store.errorMessage ?? "")
+            switch activePicker {
+            case .folder: store.importFolder(url: url)
+            case .html:
+                store.htmlFileURL = url
+                openWindow(id: "htmlViewer")
+            case .pdf:
+                store.pdfFileURL = url
+                openWindow(id: "pdfViewer")
+            case nil: break
             }
         }
-        .fileImporter(
-            isPresented: $store.isShowingHTMLFilePicker,
-            allowedContentTypes: [.html],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    store.htmlFileURL = url
-                    openWindow(id: "htmlViewer")
-                }
-            case .failure(let error):
-                store.errorMessage = "HTML file picker error: \(error.localizedDescription)"
-            }
+        .overlay {
+            if store.isLoading { loadingOverlay }
         }
-        .fileImporter(
-            isPresented: $store.isShowingPDFFilePicker,
-            allowedContentTypes: [.pdf],
-            allowsMultipleSelection: false
-        ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    store.pdfFileURL = url
-                    openWindow(id: "pdfViewer")
-                }
-            case .failure(let error):
-                store.errorMessage = "PDF file picker error: \(error.localizedDescription)"
-            }
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { store.errorMessage != nil },
+                set: { if !$0 { store.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.errorMessage ?? "")
         }
         // Disable window interaction while drawing so the stylus button
         // isn't intercepted as a pointer click by visionOS.
@@ -155,7 +149,8 @@ struct ContentView: View {
                 .multilineTextAlignment(.center)
 
             Button {
-                store.isShowingFolderPicker = true
+                activePicker = .folder
+                isPickerPresented = true
             } label: {
                 Label("Import CT Scan", systemImage: "folder.badge.plus")
                     .font(.headline)

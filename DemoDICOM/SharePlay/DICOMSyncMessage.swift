@@ -7,23 +7,42 @@ import Foundation
 
 // MARK: - ExamType
 
-/// The set of exam types participants can load for a collaborative session.
+/// All exam types a participant can load for a collaborative session.
 enum ExamType: String, Codable, CaseIterable, Hashable {
-    case dicom
+    case medicalHistory
+    case vitals
     case bloodTests
-    case medicalRecord
+    case echo
+    case ct
+    case coro
+    case other
 
-    /// Every exam type every participant must have loaded before the session can start.
-    static var allRequired: Set<ExamType> { Set(ExamType.allCases) }
+    /// Exam types every participant must load before the session can start.
+    /// Adjust this set to relax or tighten the readiness requirement.
+    static var allRequired: Set<ExamType> { [.medicalHistory] }
+
+    /// Human-readable label used in the UI.
+    var displayName: String {
+        switch self {
+        case .medicalHistory: return "Medical History"
+        case .vitals:         return "Vitals"
+        case .bloodTests:     return "Blood Tests"
+        case .echo:           return "Echo"
+        case .ct:             return "CT"
+        case .coro:           return "Coro"
+        case .other:          return "Other"
+        }
+    }
 }
 
 // MARK: - ExamMetadata
 
 /// Lightweight lobby metadata for one loaded exam — never contains pixel data or file contents.
 enum ExamMetadata: Codable {
+    /// DICOM exam (echo, CT, coro): carries slice count and series info for the lobby UI.
     case dicom(sliceCount: Int, seriesDescription: String, patientName: String)
-    case bloodTests(fileName: String)
-    case medicalRecord(fileName: String)
+    /// Document exam (medical history, vitals, blood tests, other): carries the file name.
+    case document(fileName: String)
 }
 
 // MARK: - DICOMSyncMessage
@@ -40,35 +59,36 @@ struct DICOMSyncMessage: Codable {
         /// A participant scrolled to a new slice.
         case sliceChanged(index: Int)
         /// A participant changed the window/level preset.
-        /// Uses the raw `Int` value of `MedicalPreset` for Codable compatibility.
         case presetChanged(rawValue: Int)
 
-        // MARK: - Lobby readiness (sent during lobby phase)
+        // MARK: - Lobby readiness
 
         /// A participant finished loading one exam type.
         case examReady(type: ExamType, metadata: ExamMetadata)
         /// A participant cleared or re-started loading one exam type.
         case examNotReady(type: ExamType)
+        /// A participant manually started the session from the lobby button.
+        case sessionStarted
 
-        /// A participant (local or remote) cleared all 3D immersive drawings.
+        /// A participant cleared all 3D immersive drawings.
         case clearDrawings
-        /// A participant removed a specific set of their own 2D annotation strokes
-        /// from a specific session. Only the listed strokes are removed; others are preserved.
+        /// A participant removed specific 2D annotation strokes from a session.
         case removeAnnotationStrokes(sessionID: UUID, strokeIDs: [UUID])
 
         // MARK: - Annotation Sessions
 
-        /// A participant opened (or re-opened) an annotation window for the given session.
         case annotationSessionOpened(sessionID: UUID, sliceIndex: Int)
-        /// A participant closed their annotation window for the given session.
         case annotationSessionClosed(sessionID: UUID)
 
         // MARK: - Drawing Space
 
-        /// A participant opened the immersive drawing space.
         case drawingSpaceOpened
-        /// A participant closed the immersive drawing space.
         case drawingSpaceClosed
+
+        // MARK: - Shared Window
+
+        /// A participant pushed an exam type into the shared window (nil = cleared).
+        case sharedWindowChanged(examType: ExamType?)
     }
 
     let kind: Kind
