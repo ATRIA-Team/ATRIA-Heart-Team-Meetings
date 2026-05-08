@@ -374,3 +374,8 @@ private struct ParticipantRow: View {
         .padding(.vertical, 10)
     }
 }
+
+#Preview {
+    LobbyView()
+        .environment(DICOMStore())
+}

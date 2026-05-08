@@ -225,7 +225,8 @@ final class SharePlayCoordinator {
     /// Sets the session as started locally and notifies all peers.
     @MainActor
     func startSession() {
-        guard isInSession, allParticipantsReady else { return }
+        guard (isInSession || DebugFlags.bypassSharePlay),
+              (allParticipantsReady || DebugFlags.bypassSharePlay) else { return }
         sessionHasStarted = true
         send(DICOMSyncMessage(kind: .sessionStarted))
     }

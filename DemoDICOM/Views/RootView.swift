@@ -20,11 +20,13 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            // Show the lobby only while a session exists AND the session hasn't
-            // officially started. Once `sessionHasStarted` latches to true, all
-            // participants stay in the viewer even if a late joiner connects.
-            if store.sharePlay.isInSession && !store.sharePlay.sessionHasStarted {
-                NavigationStack { LobbyView() }
+            if store.sharePlay.isInSession || DebugFlags.bypassSharePlay {
+                if store.sharePlay.sessionHasStarted {
+                    // Main window becomes the shared window once session is live.
+                    NavigationStack { SharedWindow() }
+                } else {
+                    NavigationStack { LobbyView() }
+                }
             } else {
                 HomeView2()
             }
@@ -37,7 +39,8 @@ struct RootView: View {
         }
         .onChange(of: store.sharePlay.sessionHasStarted) { _, started in
             if started {
-                openWindow(id: "sharedWindow")
+                // Main window transitions to SharedWindow in-place; only the
+                // remote-controls companion panel needs to be opened separately.
                 openWindow(id: "remoteControls")
             }
         }

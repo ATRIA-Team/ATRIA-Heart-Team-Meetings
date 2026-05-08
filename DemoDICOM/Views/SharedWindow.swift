@@ -122,5 +122,6 @@ struct SharedWindow: View {
 #Preview(windowStyle: .automatic) {
     NavigationStack {
         SharedWindow()
+            .environment(DICOMStore())
     }
 }
