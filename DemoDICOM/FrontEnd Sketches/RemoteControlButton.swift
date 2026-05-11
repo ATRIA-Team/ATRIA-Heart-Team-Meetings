@@ -14,11 +14,15 @@ struct RemoteControlButton: View {
     let action: () -> Void
     var longPressAction: (() -> Void)? = nil
     @State private var isHovered = false
+    @State private var longPressTriggered = false
 
     var body: some View {
 
         let button = Button {
-            action()
+            if !longPressTriggered {
+                action()
+            }
+            longPressTriggered = false
         } label: {
             
             Rectangle()
@@ -64,7 +68,10 @@ struct RemoteControlButton: View {
 
         if let longPressAction {
             button.simultaneousGesture(
-                LongPressGesture(minimumDuration: 0.6).onEnded { _ in longPressAction() }
+                LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+                    longPressTriggered = true
+                    longPressAction()
+                }
             )
         } else {
             button

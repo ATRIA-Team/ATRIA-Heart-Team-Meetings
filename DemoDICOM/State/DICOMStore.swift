@@ -295,6 +295,14 @@ final class DICOMStore {
 
     // MARK: - DICOM Import
 
+    /// Remove a previously imported exam, clearing its data and notifying peers.
+    @MainActor
+    func removeExam(_ examType: ExamType) {
+        dicomExams[examType] = nil
+        if selectedDICOMExamType == examType { selectedDICOMExamType = nil }
+        sharePlay.broadcastExamNotReady(type: examType)
+    }
+
     /// Import DICOM slices from a folder. Each exam type gets its own independent buffer.
     @MainActor
     func importFolder(url: URL, examType: ExamType = .ct) {

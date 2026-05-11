@@ -11,8 +11,12 @@ struct RemoteControlsView: View {
 
     @Environment(DICOMStore.self) private var store
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     var body: some View {
+        @Bindable var store = store
+
         VStack(alignment: .leading, spacing: 30) {
 
             HStack(spacing: 30) {
@@ -26,6 +30,7 @@ struct RemoteControlsView: View {
                 remoteButton(.ct,   icon: "waveform.path.ecg.rectangle.fill", text: "CT")
                 remoteButton(.coro, icon: "heart.fill",                        text: "Coro")
                 remoteButton(.other, icon: "heart.text.clipboard.fill",        text: "Other")
+                drawingToggleButton
             }
 
             HStack(spacing: 8) {
@@ -34,8 +39,84 @@ struct RemoteControlsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Divider()
+
+            drawingToolbar
         }
         .padding(30)
+    }
+
+    // MARK: - Drawing toolbar
+
+    // MARK: - Drawing toggle tile
+
+    private var drawingToggleButton: some View {
+        RemoteControlButton(
+            icon: store.isDrawingActive ? "pencil.slash" : "pencil.and.outline",
+            text: store.isDrawingActive ? "Stop Drawing" : "Draw"
+        ) {
+            Task {
+                if store.isDrawingActive {
+                    await dismissImmersiveSpace()
+                    store.isDrawingActive = false
+                } else {
+                    let result = await openImmersiveSpace(id: "DrawingSpace")
+                    if case .opened = result { store.isDrawingActive = true }
+                }
+            }
+        }
+    }
+
+    private var drawingToolbar: some View {
+        @Bindable var store = store
+        return HStack(spacing: 20) {
+
+            ColorPicker("Brush Color", selection: $store.drawing.brushColor, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 36, height: 36)
+
+            HStack(spacing: 8) {
+                Image(systemName: "pencil.tip")
+                    .foregroundStyle(.secondary)
+                Slider(value: $store.drawing.brushSize, in: 0.001...0.02, step: 0.001)
+                    .frame(width: 120)
+                Text(String(format: "%.0f mm", store.drawing.brushSize * 1000))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .frame(width: 44, alignment: .trailing)
+            }
+
+            Divider().frame(height: 28)
+
+            Button {
+                store.drawing.undo()
+            } label: {
+                Label("Undo", systemImage: "arrow.uturn.backward")
+            }
+            .labelStyle(.iconOnly)
+            .disabled(!store.drawing.canUndo)
+
+            Button {
+                store.drawing.redo()
+            } label: {
+                Label("Redo", systemImage: "arrow.uturn.forward")
+            }
+            .labelStyle(.iconOnly)
+            .disabled(!store.drawing.canRedo)
+
+            Divider().frame(height: 28)
+
+            Button(role: .destructive) {
+                store.drawing.receiveClearDrawings()
+                store.sharePlay.sendClearDrawings()
+            } label: {
+                Label("Clear All", systemImage: "trash")
+            }
+            .labelStyle(.iconOnly)
+            .disabled(!store.isDrawingActive)
+        }
     }
 
     // MARK: - Button builder

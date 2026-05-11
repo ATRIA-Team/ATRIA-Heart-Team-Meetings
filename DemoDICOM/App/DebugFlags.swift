@@ -4,5 +4,5 @@
 // in RootView.swift and SharePlayCoordinator.swift.
 
 enum DebugFlags {
-    static let bypassSharePlay = false
+    static let bypassSharePlay = true
 }

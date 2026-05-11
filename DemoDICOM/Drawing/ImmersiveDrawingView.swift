@@ -25,6 +25,7 @@ struct ImmersiveDrawingView: View {
     @State private var stylusManager = StylusTipManager()
 
     @State private var activeStrokes: [UUID: StrokeEntity] = [:]
+    @State private var removedStrokes: [(id: UUID, entity: StrokeEntity)] = []
     @State private var currentLocalStrokeID: UUID?
     @State private var lastTipPosition: SIMD3<Float>?
 
@@ -74,6 +75,27 @@ struct ImmersiveDrawingView: View {
         ) { _ in
             drawingRoot.children.removeAll()
             activeStrokes.removeAll()
+            removedStrokes.removeAll()
+        }
+        // Undo last local stroke
+        .onReceive(
+            NotificationCenter.default.publisher(for: .undoLastDrawingStroke)
+        ) { notification in
+            guard let id = notification.object as? UUID,
+                  let entity = activeStrokes[id] else { return }
+            entity.removeFromParent()
+            activeStrokes[id] = nil
+            removedStrokes.append((id: id, entity: entity))
+        }
+        // Redo last undone local stroke
+        .onReceive(
+            NotificationCenter.default.publisher(for: .redoLastDrawingStroke)
+        ) { notification in
+            guard let id = notification.object as? UUID,
+                  let index = removedStrokes.firstIndex(where: { $0.id == id }) else { return }
+            let entry = removedStrokes.remove(at: index)
+            drawingRoot.addChild(entry.entity)
+            activeStrokes[id] = entry.entity
         }
         // Main drawing loop — runs for the lifetime of this immersive space
         .task { await runDrawingLoop() }
@@ -115,6 +137,9 @@ struct ImmersiveDrawingView: View {
                     lastTipPosition = currentPos
                 }
             } else {
+                if let completedID = currentLocalStrokeID {
+                    store.drawing.strokeCompleted(completedID)
+                }
                 currentLocalStrokeID = nil
                 lastTipPosition = nil
             }

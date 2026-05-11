@@ -180,6 +180,7 @@ struct LobbyView: View {
         let tint: Color
         let label: String
         let detail: String
+        let removeAction: () -> Void
     }
 
     private var uploadedFileEntries: [FileEntry] {
@@ -192,19 +193,21 @@ struct LobbyView: View {
         for (examType, icon, label) in dicomTypes {
             if let bundle = store.dicomExams[examType], bundle.sliceCount > 0 {
                 entries.append(FileEntry(icon: icon, tint: .blue, label: label,
-                                         detail: "\(bundle.sliceCount) slices"))
+                                         detail: "\(bundle.sliceCount) slices",
+                                         removeAction: { [store] in store.removeExam(examType) }))
             }
         }
-        let docTypes: [(URL?, String, String, Color)] = [
-            (store.medicalHistoryURL, "list.bullet.clipboard.fill", "Medical History", .green),
-            (store.vitalsURL,         "stethoscope",                "Vitals",          .orange),
-            (store.bloodTestURL,      "drop.fill",                  "Blood Tests",     .red),
-            (store.otherFileURL,      "heart.text.clipboard.fill",  "Other",           .purple),
+        let docTypes: [(URL?, String, String, Color, () -> Void)] = [
+            (store.medicalHistoryURL, "list.bullet.clipboard.fill", "Medical History", .green,  { store.medicalHistoryURL = nil }),
+            (store.vitalsURL,         "stethoscope",                "Vitals",          .orange, { store.vitalsURL         = nil }),
+            (store.bloodTestURL,      "drop.fill",                  "Blood Tests",     .red,    { store.bloodTestURL      = nil }),
+            (store.otherFileURL,      "heart.text.clipboard.fill",  "Other",           .purple, { store.otherFileURL      = nil }),
         ]
-        for (url, icon, label, tint) in docTypes {
+        for (url, icon, label, tint, remove) in docTypes {
             if let url {
                 entries.append(FileEntry(icon: icon, tint: tint, label: label,
-                                         detail: url.lastPathComponent))
+                                         detail: url.lastPathComponent,
+                                         removeAction: remove))
             }
         }
         return entries
@@ -238,6 +241,13 @@ struct LobbyView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                             .font(.body)
+
+                        Button(role: .destructive, action: entry.removeAction) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.body)
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(.vertical, 10)
 
@@ -284,7 +294,7 @@ struct LobbyView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            let canStart = store.sharePlay.allParticipantsReady
+            let canStart = store.sharePlay.allParticipantsReady || DebugFlags.bypassSharePlay
             Button {
                 store.sharePlay.startSession()
             } label: {

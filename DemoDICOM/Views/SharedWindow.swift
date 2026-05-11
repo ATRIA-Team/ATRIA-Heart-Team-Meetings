@@ -11,6 +11,7 @@ import PDFKit
 struct SharedWindow: View {
 
     @Environment(DICOMStore.self) private var store
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         @Bindable var store = store
@@ -49,6 +50,15 @@ struct SharedWindow: View {
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.black)
+                    .onLongPressGesture(minimumDuration: 0.5) {
+                        openWindow(id: "annotation", value: UUID())
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        Label("Hold to annotate", systemImage: "pencil.and.outline")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(6)
+                    }
 
                 if store.sliceCount > 1 {
                     Slider(
