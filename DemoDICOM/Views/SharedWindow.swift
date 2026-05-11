@@ -12,6 +12,7 @@ struct SharedWindow: View {
 
     @Environment(DICOMStore.self) private var store
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
         @Bindable var store = store
@@ -27,6 +28,20 @@ struct SharedWindow: View {
             }
         }
         .navigationTitle(sharedWindowTitle(store: store))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(role: .destructive) {
+                    dismissWindow(id: "remoteControls")
+                    store.sharePlay.leaveSession()
+                } label: {
+                    HStack {
+                        Image(systemName: "shareplay.slash")
+                        Text("End SharePlay session")
+                    }
+                    .foregroundStyle(Color.red)
+                }
+            }
+        }
         .background {
             WindowInteractionToggle(enabled: !store.isDrawingActive)
         }

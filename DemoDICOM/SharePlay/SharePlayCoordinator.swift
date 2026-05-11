@@ -362,6 +362,13 @@ final class SharePlayCoordinator {
         }
     }
 
+    /// Leaves the current SharePlay session. The `.invalidated` state observer
+    /// fires automatically and calls `tearDown()`, resetting all session state.
+    @MainActor
+    func leaveSession() {
+        session?.leave()
+    }
+
     @MainActor
     private func tearDown() {
         isInSession = false
