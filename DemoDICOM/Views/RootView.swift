@@ -48,6 +48,7 @@ struct RootView: View {
             // Ensure the immersive drawing space is synced for all participants.
             Task {
                 if newValue {
+                    store.suppressDrawingToolsPanel = true
                     await openImmersiveSpace(id: "DrawingSpace")
                 } else {
                     await dismissImmersiveSpace()

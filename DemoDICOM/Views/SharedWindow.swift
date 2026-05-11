@@ -67,6 +67,15 @@ struct SharedWindow: View {
             .overlay {
                 AnnotationStrokesView(strokes: Array(session.strokes.values))
             }
+            .onTapGesture {
+                openWindow(id: "annotation", value: session.id)
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Label("Tap to draw together", systemImage: "pencil.and.outline")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(6)
+            }
             .padding()
     }
 
