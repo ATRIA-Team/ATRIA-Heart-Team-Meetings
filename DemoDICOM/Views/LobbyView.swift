@@ -98,7 +98,7 @@ struct LobbyView: View {
             Text("Collaborative session")
                 .font(.title2.weight(.semibold))
 
-            Text("Each participant loads their own local copy of every exam file. The session can be started when all participants uploaded at least the medical record of the patient.")
+            Text("Each participant loads their own local copy of every exam file. The session can be started when all participants have uploaded at least one file of any category.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -307,7 +307,7 @@ struct LobbyView: View {
             .disabled(!canStart)
 
             if !canStart {
-                Text("Waiting for all participants to upload the required file…")
+                Text("Waiting for all participants to upload at least one file…")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

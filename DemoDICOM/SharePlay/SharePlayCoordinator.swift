@@ -20,8 +20,8 @@ struct ParticipantReadyState: Identifiable {
     /// Lightweight metadata per loaded exam, used by the lobby UI.
     var examMetadata: [ExamType: ExamMetadata] = [:]
 
-    /// Derived: participant is fully ready when every required exam type is loaded.
-    var isReady: Bool { loadedExams == ExamType.allRequired }
+    /// Derived: participant is ready when at least one exam file of any type is loaded.
+    var isReady: Bool { !loadedExams.isEmpty }
 
     // MARK: Convenience accessors for LobbyView
 
