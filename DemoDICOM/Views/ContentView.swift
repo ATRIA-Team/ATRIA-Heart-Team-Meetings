@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 /// Invisible UIView that finds its parent UIWindow and toggles
 /// `isUserInteractionEnabled` so visionOS stops routing stylus
 /// button presses as indirect-pointer clicks into this window.
-private struct WindowInteractionToggle: UIViewRepresentable {
+struct WindowInteractionToggle: UIViewRepresentable {
     var enabled: Bool
 
     func makeUIView(context: Context) -> UIView {

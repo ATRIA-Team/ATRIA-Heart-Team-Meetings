@@ -42,9 +42,13 @@ struct ImmersiveDrawingView: View {
             stylusManager.rootEntity = stylusRoot
             await stylusManager.handleControllerSetup()
         }
-        // Open the floating brush-controls window when the immersive space starts
+        // Open the floating brush-controls window when the immersive space starts,
+        // unless the caller already provides its own brush controls.
         .onAppear {
-            openWindow(id: "drawingTools")
+            if !store.suppressDrawingToolsPanel {
+                openWindow(id: "drawingTools")
+            }
+            store.suppressDrawingToolsPanel = false
         }
         // Close it when the immersive space ends (e.g. dismissed from elsewhere)
         .onDisappear {

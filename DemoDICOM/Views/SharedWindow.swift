@@ -24,6 +24,9 @@ struct SharedWindow: View {
             }
         }
         .navigationTitle(store.sharedWindowExamType?.displayName ?? "Shared Window")
+        .background {
+            WindowInteractionToggle(enabled: !store.isDrawingActive)
+        }
     }
 
     // MARK: - Content router

@@ -63,6 +63,10 @@ final class DICOMStore {
 
     var drawing = DrawingManager()
 
+    /// When `true`, `ImmersiveDrawingView` will not auto-open the floating DrawingToolsPanel.
+    /// Set by callers that already provide their own brush controls (e.g. RemoteControlsView).
+    var suppressDrawingToolsPanel = false
+
     var isDrawingActive = false {
         didSet {
             guard isDrawingActive != oldValue else { return }

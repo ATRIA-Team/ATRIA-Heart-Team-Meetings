@@ -30,7 +30,6 @@ struct RemoteControlsView: View {
                 remoteButton(.ct,   icon: "waveform.path.ecg.rectangle.fill", text: "CT")
                 remoteButton(.coro, icon: "heart.fill",                        text: "Coro")
                 remoteButton(.other, icon: "heart.text.clipboard.fill",        text: "Other")
-                drawingToggleButton
             }
 
             HStack(spacing: 8) {
@@ -49,28 +48,31 @@ struct RemoteControlsView: View {
 
     // MARK: - Drawing toolbar
 
-    // MARK: - Drawing toggle tile
-
-    private var drawingToggleButton: some View {
-        RemoteControlButton(
-            icon: store.isDrawingActive ? "pencil.slash" : "pencil.and.outline",
-            text: store.isDrawingActive ? "Stop Drawing" : "Draw"
-        ) {
-            Task {
-                if store.isDrawingActive {
-                    await dismissImmersiveSpace()
-                    store.isDrawingActive = false
-                } else {
-                    let result = await openImmersiveSpace(id: "DrawingSpace")
-                    if case .opened = result { store.isDrawingActive = true }
-                }
-            }
-        }
-    }
-
     private var drawingToolbar: some View {
         @Bindable var store = store
         return HStack(spacing: 20) {
+
+            Button {
+                Task {
+                    if store.isDrawingActive {
+                        await dismissImmersiveSpace()
+                        store.isDrawingActive = false
+                    } else {
+                        store.suppressDrawingToolsPanel = true
+                        let result = await openImmersiveSpace(id: "DrawingSpace")
+                        if case .opened = result { store.isDrawingActive = true }
+                    }
+                }
+            } label: {
+                Label(
+                    store.isDrawingActive ? "Stop Drawing" : "Start Drawing",
+                    systemImage: store.isDrawingActive ? "pencil.slash" : "pencil.and.outline"
+                )
+            }
+            .tint(store.isDrawingActive ? .orange : .accentColor)
+            .buttonStyle(.bordered)
+
+            Divider().frame(height: 28)
 
             ColorPicker("Brush Color", selection: $store.drawing.brushColor, supportsOpacity: false)
                 .labelsHidden()
