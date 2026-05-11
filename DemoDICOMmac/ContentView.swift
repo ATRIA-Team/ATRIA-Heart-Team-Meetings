@@ -10,43 +10,51 @@ import AppKit
 import UniformTypeIdentifiers
 internal import Combine
 
+// MARK: - Model
+
 enum Category: String, CaseIterable, Identifiable {
-    case medical = "Medical data"
-    case ct = "CT"
-    case blood = "Blood exams"
+    case medicalHistory = "Medical History"
+    case vitals         = "Vitals"
+    case bloodTests     = "Blood Tests"
+    case echo           = "Echo"
+    case ct             = "CT"
+    case coro           = "Coro"
+    case other          = "Other"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .medical: return "doc.text.fill"
-        case .ct: return "brain.head.profile"
-        case .blood: return "drop.fill"
+        case .medicalHistory: return "list.bullet.clipboard.fill"
+        case .vitals:         return "stethoscope"
+        case .bloodTests:     return "drop.fill"
+        case .echo:           return "waveform.path.ecg.text.clipboard.fill"
+        case .ct:             return "waveform.path.ecg.rectangle.fill"
+        case .coro:           return "heart.fill"
+        case .other:          return "heart.text.clipboard.fill"
         }
     }
 }
 
 @MainActor
 final class FolderModel: ObservableObject {
-    @Published var files: [Category: [URL]] = [
-        .medical: [], .ct: [], .blood: []
-    ]
+    @Published var files: [Category: [URL]] = Dictionary(
+        uniqueKeysWithValues: Category.allCases.map { ($0, [URL]()) }
+    )
     @Published var createdFolderURL: URL?
     @Published var status: String?
 
+    var totalCount: Int { files.values.reduce(0) { $0 + $1.count } }
+
     func add(_ urls: [URL], to category: Category) {
         var current = files[category] ?? []
-        for u in urls where !current.contains(u) {
-            current.append(u)
-        }
+        for u in urls where !current.contains(u) { current.append(u) }
         files[category] = current
     }
 
     func remove(_ url: URL, from category: Category) {
         files[category]?.removeAll { $0 == url }
     }
-
-    var totalCount: Int { files.values.reduce(0) { $0 + $1.count } }
 
     func createFolder(named name: String, in parent: URL) {
         let root = parent.appendingPathComponent(name, isDirectory: true)
@@ -70,13 +78,10 @@ final class FolderModel: ObservableObject {
         }
     }
 
-    /// Moves the created folder into iCloud Drive root. Returns the new URL.
     @discardableResult
     func moveToICloud() -> URL? {
         guard let src = createdFolderURL else { return nil }
-        guard let iCloudRoot = FileManager.default.url(forUbiquityContainerIdentifier: nil)?
-                .appendingPathComponent("Documents")
-              ?? defaultICloudDriveURL() else {
+        guard let iCloudRoot = iCloudDocumentsURL() else {
             status = "iCloud Drive not available."
             return nil
         }
@@ -96,59 +101,52 @@ final class FolderModel: ObservableObject {
         }
     }
 
-    private func defaultICloudDriveURL() -> URL? {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let path = home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
+    private func iCloudDocumentsURL() -> URL? {
+        if let container = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+            return container.appendingPathComponent("Documents")
+        }
+        let path = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs", isDirectory: true)
         return FileManager.default.fileExists(atPath: path.path) ? path : nil
     }
 }
 
+// MARK: - Root view
+
 struct ContentView: View {
-    @StateObject private var model = FolderModel()
-    @State private var folderName: String = "Patient Folder"
+    @StateObject private var model: FolderModel
+    @State private var folderName = "Patient Folder"
+
+    init(previewModel: FolderModel? = nil) {
+        _model = StateObject(wrappedValue: previewModel ?? FolderModel())
+    }
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("Cloud Folder Organizer")
-                .font(.largeTitle.bold())
-
-            HStack(spacing: 16) {
-                ForEach(Category.allCases) { category in
-                    DropCard(category: category, model: model)
+        HStack(alignment: .top, spacing: 28) {
+            VStack(alignment: .leading, spacing: 14) {
+                SidePanel(model: model, folderName: $folderName, onCreateTapped: chooseLocationAndCreate)
+                if model.createdFolderURL != nil {
+                    ShareRow(model: model)
                 }
             }
 
-            Divider()
-
-            HStack {
-                TextField("Folder name", text: $folderName)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 240)
-                Button {
-                    chooseLocationAndCreate()
-                } label: {
-                    Label("Create folder", systemImage: "folder.badge.plus")
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(spacing: 14) {
+                    DropTile(category: .medicalHistory, model: model)
+                    DropTile(category: .vitals,         model: model)
+                    DropTile(category: .bloodTests,     model: model)
+                    DropTile(category: .echo,           model: model)
                 }
-                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || model.totalCount == 0)
-                .keyboardShortcut(.defaultAction)
-                Spacer()
+                HStack(spacing: 14) {
+                    DropTile(category: .ct,    model: model)
+                    DropTile(category: .coro,  model: model)
+                    DropTile(category: .other, model: model)
+                }
+                Spacer(minLength: 0)
             }
-
-            if let url = model.createdFolderURL {
-                ShareSection(folderURL: url, model: model)
-            }
-
-            if let status = model.status {
-                Text(status)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            Spacer(minLength: 0)
         }
-        .padding(20)
-        .frame(minWidth: 820, minHeight: 560)
+        .padding(30)
+        .frame(minWidth: 1080, minHeight: 560)
     }
 
     private func chooseLocationAndCreate() {
@@ -159,80 +157,139 @@ struct ContentView: View {
         panel.prompt = "Choose"
         panel.message = "Choose where to create the folder"
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-        if panel.runModal() == .OK, let parent = panel.url {
-            model.createFolder(named: folderName, in: parent)
-        }
+        guard panel.runModal() == .OK, let parent = panel.url else { return }
+        model.createFolder(named: folderName, in: parent)
     }
 }
 
-struct DropCard: View {
+// MARK: - Side panel
+
+struct SidePanel: View {
+    @ObservedObject var model: FolderModel
+    @Binding var folderName: String
+    var onCreateTapped: () -> Void
+
+    var body: some View {
+        GlassCard(style: .panel, cornerRadius: 36) {
+            VStack(spacing: 0) {
+                Image(systemName: "folder.fill.badge.person.crop")
+                    .font(.system(size: 46, weight: .semibold))
+                    .padding(.top, 32)
+                    .padding(.bottom, 10)
+
+                Text("Folder\nOrganizer")
+                    .font(.system(size: 20, weight: .bold))
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 24)
+
+                Divider().padding(.horizontal, 20).padding(.bottom, 20)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("FOLDER NAME")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .tracking(1)
+                    TextField("Patient Folder", text: $folderName)
+                        .textFieldStyle(.roundedBorder)
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
+
+                VStack(spacing: 4) {
+                    Text("\(model.totalCount) file\(model.totalCount == 1 ? "" : "s") added")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let status = model.status {
+                        Text(status)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .padding(.horizontal, 12)
+                    }
+                }
+                .padding(.bottom, 12)
+
+                Button {
+                    onCreateTapped()
+                } label: {
+                    Label("Create Folder", systemImage: "folder.badge.plus")
+                        .frame(maxWidth: .infinity)
+                }
+                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || model.totalCount == 0)
+                .keyboardShortcut(.defaultAction)
+                .controlSize(.large)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 28)
+            }
+        }
+        .frame(width: 290, height: 460)
+        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+    }
+}
+
+// MARK: - Drop tile
+
+struct DropTile: View {
     let category: Category
     @ObservedObject var model: FolderModel
     @State private var isTargeted = false
+    @State private var isHovered = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: category.icon)
-                .font(.system(size: 32))
-                .foregroundStyle(.tint)
-            Text(category.rawValue)
-                .font(.headline)
-            Text("Drag files here")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        GlassCard(cornerRadius: 20, isHighlighted: isTargeted, showHoverOverlay: isHovered || isTargeted) {
+            VStack(spacing: 10) {
+                Image(systemName: isTargeted ? "arrow.down.circle.fill" : category.icon)
+                    .font(.system(size: 40, weight: .semibold))
+                    .foregroundStyle(isTargeted ? Color.accentColor : .primary)
+                    .animation(.easeInOut(duration: 0.15), value: isTargeted)
 
-            let items = model.files[category] ?? []
-            if items.isEmpty {
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [4]))
-                    .foregroundStyle(.secondary.opacity(0.4))
-                    .frame(height: 120)
-                    .overlay(Text("No files").foregroundStyle(.tertiary))
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(items, id: \.self) { url in
-                            HStack {
-                                Image(systemName: "doc")
-                                Text(url.lastPathComponent)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-                                Spacer()
-                                Button {
-                                    model.remove(url, from: category)
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.secondary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            .font(.caption)
-                        }
-                    }
-                    .padding(6)
+                Text(category.rawValue)
+                    .font(.headline)
+
+                let items = model.files[category] ?? []
+                if items.isEmpty {
+                    Text("Drag files here")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                } else {
+                    fileList(items)
                 }
-                .frame(height: 120)
-                .background(RoundedRectangle(cornerRadius: 8).fill(Color.secondary.opacity(0.08)))
             }
+            .padding(16)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(isTargeted ? Color.accentColor : Color.secondary.opacity(0.25),
-                        lineWidth: isTargeted ? 2 : 1)
-        )
-        .onDrop(of: [.fileURL], isTargeted: $isTargeted) { providers in
-            handleDrop(providers: providers)
-            return true
-        }
+        .frame(width: 175, height: 230)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onHover { isHovered = $0 }
+        .onDrop(of: [.fileURL], isTargeted: $isTargeted, perform: handleDrop)
     }
 
-    private func handleDrop(providers: [NSItemProvider]) {
+    private func fileList(_ items: [URL]) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(items, id: \.self) { url in
+                    HStack {
+                        Image(systemName: "doc").foregroundStyle(.secondary)
+                        Text(url.lastPathComponent)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button { model.remove(url, from: category) } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .font(.caption)
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+        .frame(maxHeight: 100)
+    }
+
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
         var collected: [URL] = []
         let group = DispatchGroup()
         for p in providers {
@@ -242,47 +299,38 @@ struct DropCard: View {
                 group.leave()
             }
         }
-        group.notify(queue: .main) {
-            model.add(collected, to: category)
-        }
+        group.notify(queue: .main) { model.add(collected, to: category) }
+        return true
     }
 }
 
-struct ShareSection: View {
-    let folderURL: URL
+// MARK: - Share row
+
+struct ShareRow: View {
     @ObservedObject var model: FolderModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Share folder")
+            Text("Share Folder")
                 .font(.headline)
-            Text("Move the folder to iCloud Drive and open the native share sheet to invite collaborators (Mail, Messages, Add People, Copy Link…).")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .padding(.leading, 2)
+
             HStack(spacing: 8) {
-                NativeShareButton(items: [model.createdFolderURL ?? folderURL]) {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                NativeShareButton(items: [model.createdFolderURL as Any]) {
+                    ActionTileContent(icon: "square.and.arrow.up", text: "Share")
                 }
 
-                Button {
-                    if let moved = model.moveToICloud() {
-                        // Anchor a fresh picker on the same window after move
-                        presentSharePicker(for: moved)
+                ActionTile(icon: "icloud.and.arrow.up", text: "Move to iCloud") {
+                    if let moved = model.moveToICloud() { presentSharePicker(for: moved) }
+                }
+
+                ActionTile(icon: "folder", text: "Show in Finder") {
+                    if let url = model.createdFolderURL {
+                        NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
-                } label: {
-                    Label("Move to iCloud & Share", systemImage: "icloud.and.arrow.up")
-                }
-
-                Button {
-                    NSWorkspace.shared.activateFileViewerSelecting([model.createdFolderURL ?? folderURL])
-                } label: {
-                    Label("Reveal in Finder", systemImage: "folder")
                 }
             }
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.secondary.opacity(0.08)))
     }
 
     private func presentSharePicker(for url: URL) {
@@ -293,36 +341,17 @@ struct ShareSection: View {
     }
 }
 
-/// A SwiftUI button that opens the native macOS share sheet anchored to itself.
-struct NativeShareButton<Label: View>: View {
-    let items: [Any]
-    @ViewBuilder var label: () -> Label
-    @State private var anchor: NSView?
-
-    var body: some View {
-        Button {
-            guard let anchor else { return }
-            let picker = NSSharingServicePicker(items: items)
-            picker.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .minY)
-        } label: {
-            label()
-        }
-        .background(AnchorCapture(view: $anchor))
-    }
-}
-
-private struct AnchorCapture: NSViewRepresentable {
-    @Binding var view: NSView?
-
-    func makeNSView(context: Context) -> NSView {
-        let v = NSView()
-        DispatchQueue.main.async { self.view = v }
-        return v
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {}
-}
-
 #Preview {
-    ContentView()
+    let model = FolderModel()
+    model.files[.medicalHistory] = [URL(fileURLWithPath: "/mock/patient_history.pdf")]
+    model.files[.vitals]         = [URL(fileURLWithPath: "/mock/vitals_2026.pdf")]
+    model.files[.bloodTests]     = [URL(fileURLWithPath: "/mock/blood_results.pdf"), URL(fileURLWithPath: "/mock/cbc_panel.pdf")]
+    model.files[.echo]           = [URL(fileURLWithPath: "/mock/echo_study.dcm")]
+    model.files[.ct]             = [URL(fileURLWithPath: "/mock/ct_chest_001.dcm"), URL(fileURLWithPath: "/mock/ct_chest_002.dcm")]
+    model.files[.coro]           = [URL(fileURLWithPath: "/mock/coro_left.dcm")]
+    model.files[.other]          = []
+    model.createdFolderURL       = URL(fileURLWithPath: "/mock/Patient Folder")
+    model.status                 = "Folder created at /mock/Patient Folder"
+
+    return ContentView(previewModel: model)
 }
