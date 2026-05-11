@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import GroupActivities
+import _GroupActivities_UIKit
 
 struct HomeView2: View {
 
@@ -15,11 +17,12 @@ struct HomeView2: View {
     @State private var showCaptures: Bool = false
     @State private var showDICOMViewer: Bool = false
     @State private var showLobby: Bool = false
+    @State private var showShareSheet: Bool = false
 
     var body: some View {
         NavigationStack {
         HStack(spacing: 150) {
-            
+
             Rectangle()
                 .foregroundColor(.clear)
                 .frame(width: 482, height: 586)
@@ -27,44 +30,44 @@ struct HomeView2: View {
                 .background(Color(red: 0.84, green: 0.84, blue: 0.84).opacity(0.45))
                 .cornerRadius(100)
                 .overlay {
-                    
+
                     VStack(spacing: 35) {
-                        
+
                         VStack(spacing: 1) {
                             Text("09:41")
                                 .font(.system(size: 50, weight: .bold))
                                 .foregroundColor(.white)
-                            
+
                             Text("01 Jun 2026")
                                 .font(.system(size: 20))
                                 .foregroundColor(.white)
                         }
                         .padding(.top, 25)
-                        
+
                         Text("Upcoming meetings")
                             .font(.system(size: 30, weight: .bold))
                             .foregroundColor(.white)
-                        
+
                         if noMeetings {
-                            
+
                             VStack {
                                 Image(systemName: "video.slash")
                                     .font(.system(size: 50))
-                                
+
                                 Text("There are no scheduled meetings")
                                     .font(.callout)
                             }
                             .foregroundStyle(.secondary)
                             .padding(.top, 85)
-                            
+
                         } else {
-                            
+
                         }
-                        
+
                         Spacer()
                     }
                 }
-            
+
             VStack(spacing: 30) {
 
                 HStack(spacing: 30) {
@@ -75,9 +78,17 @@ struct HomeView2: View {
                         icon: store.sharePlay.isInSession ? "shareplay" : "video.fill",
                         text: store.sharePlay.isInSession
                             ? "\(store.sharePlay.participantCount) in session"
-                            : (store.sharePlay.isEligibleForGroupSession ? "Invite to SharePlay" : "Start meeting")
+                            : "Start meeting"
                     ) {
-                        Task { await store.sharePlay.activate() }
+                        if store.sharePlay.isInSession {
+                            // Already in a session — nothing to do from here.
+                        } else {
+                            showShareSheet = true
+                        }
+                    }
+                    .sheet(isPresented: $showShareSheet) {
+                        GroupActivitySharingSheet(activity: DICOMViewerActivity())
+                            .ignoresSafeArea()
                     }
                 }
 
@@ -91,17 +102,6 @@ struct HomeView2: View {
                 }
             }
         }
-        .alert(
-            "SharePlay Unavailable",
-            isPresented: Binding(
-                get: { store.sharePlay.activationError != nil },
-                set: { if !$0 { store.sharePlay.activationError = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(store.sharePlay.activationError ?? "")
-        }
         .navigationDestination(isPresented: $showLobby) {
             LobbyView()
         }
@@ -113,6 +113,21 @@ struct HomeView2: View {
         }
         } // NavigationStack
     }
+}
+
+// MARK: - GroupActivitySharingSheet
+
+/// Wraps `GroupActivitySharingController` so it can be presented as a SwiftUI sheet.
+/// The system controller lets the user pick contacts, start a FaceTime call, and
+/// share the activity — all in one flow.
+private struct GroupActivitySharingSheet<Activity: GroupActivity>: UIViewControllerRepresentable {
+    let activity: Activity
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        (try? GroupActivitySharingController(activity)) ?? UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
 
 #Preview(windowStyle: .automatic) {
