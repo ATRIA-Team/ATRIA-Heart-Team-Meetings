@@ -38,7 +38,7 @@ struct DemoDICOMApp: App {
             AnnotationView(sessionID: sessionID ?? UUID())
                 .environment(store)
         }
-        .defaultSize(width: 720, height: 780)
+        .defaultSize(width: 1080, height: 1080)
         .modelContainer(annotationContainer)  // same instance → same store
 
         // Floating brush-controls window opened automatically when DrawingSpace opens.

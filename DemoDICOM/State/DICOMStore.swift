@@ -87,6 +87,16 @@ final class DICOMStore {
         }
     }
 
+    /// The annotation session currently displayed in the shared window for all participants.
+    /// Setting this broadcasts the change to every peer and overrides any exam-type content
+    /// in the shared window. Set to nil to return to the previous exam-type view.
+    var sharedAnnotationSessionID: UUID? {
+        didSet {
+            guard sharedAnnotationSessionID != oldValue else { return }
+            sharePlay.send(DICOMSyncMessage(kind: .sharedAnnotationChanged(sessionID: sharedAnnotationSessionID)))
+        }
+    }
+
     // MARK: - File URLs (non-DICOM)
 
     var htmlFileURL: URL?
@@ -266,6 +276,8 @@ final class DICOMStore {
             isDrawingActive = false
         case .sharedWindowChanged(let examType):
             sharedWindowExamType = examType
+        case .sharedAnnotationChanged(let sessionID):
+            sharedAnnotationSessionID = sessionID
         case .examReady, .examNotReady, .sessionStarted, .clearDrawings, .removeAnnotationStrokes:
             break
         }

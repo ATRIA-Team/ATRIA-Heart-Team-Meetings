@@ -1,0 +1,71 @@
+//
+//  SidePanel.swift
+//  DemoDICOMmac
+//
+
+import SwiftUI
+
+struct SidePanel: View {
+    @ObservedObject var model: FolderModel
+    @Binding var folderName: String
+    var onCreateTapped: () -> Void
+
+    var body: some View {
+        GlassCard(style: .panel, cornerRadius: 36) {
+            VStack(spacing: 0) {
+                Image(systemName: "folder.fill.badge.person.crop")
+                    .font(.system(size: 46, weight: .semibold))
+                    .padding(.top, 32)
+                    .padding(.bottom, 10)
+
+                Text("Folder\nOrganizer")
+                    .font(.system(size: 20, weight: .bold))
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 24)
+
+                Divider().padding(.horizontal, 20).padding(.bottom, 20)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("FOLDER NAME")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .tracking(1)
+                    TextField("Patient Folder", text: $folderName)
+                        .textFieldStyle(.roundedBorder)
+                }
+                .padding(.horizontal, 20)
+
+                Spacer()
+
+                VStack(spacing: 4) {
+                    Text("\(model.totalCount) file\(model.totalCount == 1 ? "" : "s") added")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let status = model.status {
+                        Text(status)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .padding(.horizontal, 12)
+                    }
+                }
+                .padding(.bottom, 12)
+
+                Button {
+                    onCreateTapped()
+                } label: {
+                    Label("Create Folder", systemImage: "folder.badge.plus")
+                        .frame(maxWidth: .infinity)
+                }
+                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || model.totalCount == 0)
+                .keyboardShortcut(.defaultAction)
+                .controlSize(.large)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 28)
+            }
+        }
+        .frame(width: 290, height: 460)
+        .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+    }
+}

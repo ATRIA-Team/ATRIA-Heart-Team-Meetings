@@ -89,6 +89,9 @@ struct DICOMSyncMessage: Codable {
 
         /// A participant pushed an exam type into the shared window (nil = cleared).
         case sharedWindowChanged(examType: ExamType?)
+
+        /// A participant pushed an annotation session into the shared window (nil = cleared).
+        case sharedAnnotationChanged(sessionID: UUID?)
     }
 
     let kind: Kind

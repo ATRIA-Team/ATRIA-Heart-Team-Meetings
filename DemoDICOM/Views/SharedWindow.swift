@@ -17,16 +17,42 @@ struct SharedWindow: View {
         @Bindable var store = store
 
         Group {
-            if let examType = store.sharedWindowExamType {
+            if let sessionID = store.sharedAnnotationSessionID,
+               let session = store.liveSessions[sessionID] {
+                annotationViewer(session: session)
+            } else if let examType = store.sharedWindowExamType {
                 sharedContent(for: examType, store: store)
             } else {
                 placeholderView
             }
         }
-        .navigationTitle(store.sharedWindowExamType?.displayName ?? "Shared Window")
+        .navigationTitle(sharedWindowTitle(store: store))
         .background {
             WindowInteractionToggle(enabled: !store.isDrawingActive)
         }
+    }
+
+    // MARK: - Navigation title
+
+    private func sharedWindowTitle(store: DICOMStore) -> String {
+        if let sessionID = store.sharedAnnotationSessionID,
+           let session = store.liveSessions[sessionID] {
+            return "Annotation — Slice \(session.sliceIndex + 1)"
+        }
+        return store.sharedWindowExamType?.displayName ?? "Shared Window"
+    }
+
+    // MARK: - Annotation viewer
+
+    @ViewBuilder
+    private func annotationViewer(session: LiveAnnotationSession) -> some View {
+        Image(decorative: session.frozenImage, scale: 1.0)
+            .resizable()
+            .scaledToFit()
+            .overlay {
+                AnnotationStrokesView(strokes: Array(session.strokes.values))
+            }
+            .padding()
     }
 
     // MARK: - Content router
