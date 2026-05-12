@@ -244,7 +244,6 @@ struct AnnotationView: View {
             } label: {
                 Label("Save", systemImage: "square.and.arrow.down")
             }
-            .disabled(canvasState.strokeCount == 0)
 
             Button {
                 if let undoneID = canvasState.undo() {

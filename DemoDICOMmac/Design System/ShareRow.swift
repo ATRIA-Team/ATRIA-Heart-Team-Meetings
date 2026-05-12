@@ -26,10 +26,6 @@ struct ShareRow: View {
                     }
                 }
 
-                ActionTile(icon: "envelope.badge.person.crop", text: "Resend Email") {
-                    model.shareViaEmailIfNeeded()
-                }
-                .disabled(model.collaboratorEmails.isEmpty)
             }
         }
     }
