@@ -35,6 +35,16 @@ enum ExamType: String, Codable, CaseIterable, Hashable {
     }
 }
 
+// MARK: - SharedPDFState
+
+/// Scroll and zoom state for the shared PDF document, synced across all participants.
+struct SharedPDFState: Codable, Equatable {
+    var page: Int
+    var x: Double
+    var y: Double
+    var scaleFactor: Double
+}
+
 // MARK: - ExamMetadata
 
 /// Lightweight lobby metadata for one loaded exam — never contains pixel data or file contents.
@@ -92,6 +102,9 @@ struct DICOMSyncMessage: Codable {
 
         /// A participant pushed an annotation session into the shared window (nil = cleared).
         case sharedAnnotationChanged(sessionID: UUID?)
+
+        /// A participant scrolled or zoomed the shared PDF document.
+        case pdfScrollChanged(page: Int, x: Double, y: Double, scaleFactor: Double)
     }
 
     let kind: Kind

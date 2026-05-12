@@ -342,7 +342,7 @@ final class SharePlayCoordinator {
         case .sessionStarted:
             sessionHasStarted = true
 
-        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed, .drawingSpaceOpened, .drawingSpaceClosed, .sharedWindowChanged, .sharedAnnotationChanged:
+        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed, .drawingSpaceOpened, .drawingSpaceClosed, .sharedWindowChanged, .sharedAnnotationChanged, .pdfScrollChanged:
             isApplyingRemoteChange = true
             defer { isApplyingRemoteChange = false }
             store?.applySharePlayMessage(message)

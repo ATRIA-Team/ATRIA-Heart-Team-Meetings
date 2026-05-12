@@ -80,10 +80,22 @@ final class DICOMStore {
     var sharedWindowExamType: ExamType? {
         didSet {
             guard sharedWindowExamType != oldValue else { return }
+            sharedPDFState = nil
             if let examType = sharedWindowExamType, [ExamType.echo, .ct, .coro].contains(examType) {
                 selectedDICOMExamType = examType
             }
             sharePlay.send(DICOMSyncMessage(kind: .sharedWindowChanged(examType: sharedWindowExamType)))
+        }
+    }
+
+    /// Scroll and zoom state for the shared PDF document.
+    /// Setting this broadcasts the change to every peer.
+    var sharedPDFState: SharedPDFState? {
+        didSet {
+            guard sharedPDFState != oldValue, let state = sharedPDFState else { return }
+            sharePlay.send(DICOMSyncMessage(kind: .pdfScrollChanged(
+                page: state.page, x: state.x, y: state.y, scaleFactor: state.scaleFactor
+            )))
         }
     }
 
@@ -278,6 +290,8 @@ final class DICOMStore {
             sharedWindowExamType = examType
         case .sharedAnnotationChanged(let sessionID):
             sharedAnnotationSessionID = sessionID
+        case .pdfScrollChanged(let page, let x, let y, let scaleFactor):
+            sharedPDFState = SharedPDFState(page: page, x: x, y: y, scaleFactor: scaleFactor)
         case .examReady, .examNotReady, .sessionStarted, .clearDrawings, .removeAnnotationStrokes:
             break
         }

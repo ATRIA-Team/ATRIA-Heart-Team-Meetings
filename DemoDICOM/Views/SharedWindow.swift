@@ -14,6 +14,12 @@ struct SharedWindow: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
 
+    // Local drawing state for the shared annotation canvas
+    @State private var canvasState    = PencilCanvasState()
+    @State private var brushColor: Color   = .red
+    @State private var brushSize:  CGFloat = 3.0
+    @State private var localStrokeIDs: Set<UUID> = []
+
     var body: some View {
         @Bindable var store = store
 
@@ -57,26 +63,91 @@ struct SharedWindow: View {
         return store.sharedWindowExamType?.displayName ?? "Shared Window"
     }
 
-    // MARK: - Annotation viewer
+    // MARK: - Annotation viewer (live drawing canvas)
 
     @ViewBuilder
     private func annotationViewer(session: LiveAnnotationSession) -> some View {
+        let sessionStrokes = store.liveSessions[session.id]?.strokes ?? [:]
+
         Image(decorative: session.frozenImage, scale: 1.0)
             .resizable()
             .scaledToFit()
             .overlay {
-                AnnotationStrokesView(strokes: Array(session.strokes.values))
+                // Remote peers' strokes — skip ones already rendered locally by PencilCanvas.
+                AnnotationStrokesView(
+                    strokes: sessionStrokes.values.filter { !localStrokeIDs.contains($0.id) }
+                )
             }
-            .onTapGesture {
-                openWindow(id: "annotation", value: session.id)
+            .overlay {
+                PencilCanvas(
+                    state:      canvasState,
+                    brushColor: brushColor,
+                    brushSize:  brushSize,
+                    onAnnotationPoint: { strokeID, normalizedPoint, isStart, isEnd, r, g, b, lineWidth in
+                        localStrokeIDs.insert(strokeID)
+                        let msg = Annotation2DPointMessage(
+                            sessionID: session.id,
+                            strokeID:  strokeID,
+                            x: Float(normalizedPoint.x),
+                            y: Float(normalizedPoint.y),
+                            isStart: isStart,
+                            isEnd:   isEnd,
+                            colorR: r, colorG: g, colorB: b,
+                            lineWidth: lineWidth
+                        )
+                        store.receiveAnnotation2DPoint(msg)
+                        store.sharePlay.sendAnnotation2DPoint(msg)
+                    }
+                )
             }
-            .overlay(alignment: .bottomTrailing) {
-                Label("Tap to draw together", systemImage: "pencil.and.outline")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(6)
+            .overlay(alignment: .bottom) {
+                brushControls(sessionID: session.id)
             }
             .padding()
+            .onChange(of: session.id) { _, _ in
+                canvasState.clear()
+                localStrokeIDs = []
+            }
+    }
+
+    // MARK: - Brush controls overlay
+
+    @ViewBuilder
+    private func brushControls(sessionID: UUID) -> some View {
+        HStack(spacing: 16) {
+            ColorPicker("Color", selection: $brushColor, supportsOpacity: false)
+                .labelsHidden()
+                .frame(width: 36, height: 36)
+
+            HStack(spacing: 8) {
+                Image(systemName: "pencil.tip").foregroundStyle(.secondary)
+                Slider(value: $brushSize, in: 1...20, step: 1)
+                    .frame(width: 100)
+                Text("\(Int(brushSize)) pt")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .frame(width: 36, alignment: .trailing)
+            }
+
+            Divider().frame(height: 24)
+
+            Button {
+                if let undoneID = canvasState.undo() {
+                    localStrokeIDs.remove(undoneID)
+                    store.removeAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
+                    store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
+                }
+            } label: {
+                Label("Undo", systemImage: "arrow.uturn.backward")
+            }
+            .labelStyle(.iconOnly)
+            .disabled(canvasState.strokeCount == 0)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.bottom, 16)
     }
 
     // MARK: - Content router
@@ -139,9 +210,14 @@ struct SharedWindow: View {
 
     @ViewBuilder
     private func documentViewer(for examType: ExamType, store: DICOMStore) -> some View {
+        @Bindable var store = store
         if let url = documentURL(for: examType, store: store) {
-            PDFViewRepresentable(url: url)
-                .ignoresSafeArea()
+            PDFViewRepresentable(
+                url: url,
+                incomingState: store.sharedPDFState,
+                onStateChange: { store.sharedPDFState = $0 }
+            )
+            .ignoresSafeArea()
         } else {
             ContentUnavailableView(
                 "No \(examType.displayName) File",
