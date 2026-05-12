@@ -27,6 +27,7 @@ struct DemoDICOMApp: App {
             RootView()
                 .environment(store)
         }
+        .defaultSize(width: 1920, height: 1080)
         .modelContainer(annotationContainer)
 
         // 2-D annotation window — one independent window per session UUID.
@@ -37,7 +38,7 @@ struct DemoDICOMApp: App {
             AnnotationView(sessionID: sessionID ?? UUID())
                 .environment(store)
         }
-        .defaultSize(width: 720, height: 780)
+        .defaultSize(width: 1080, height: 1080)
         .modelContainer(annotationContainer)  // same instance → same store
 
         // Floating brush-controls window opened automatically when DrawingSpace opens.
@@ -55,6 +56,32 @@ struct DemoDICOMApp: App {
                 .environment(store)
         }
         .defaultSize(width: 800, height: 600)
+
+        // PDF viewer window — opened from ContentView via file picker.
+        WindowGroup(id: "pdfViewer") {
+            PDFViewerWindow()
+                .environment(store)
+        }
+        .defaultSize(width: 1600, height: 1200)
+
+        // Shared window — one per session, opened automatically when the session starts.
+        // Shows the exam type currently broadcast by the host via RemoteControlsView.
+        WindowGroup(id: "sharedWindow") {
+            NavigationStack {
+                SharedWindow()
+            }
+            .environment(store)
+        }
+        .defaultSize(width: 1200, height: 900)
+
+        // Remote-controls panel — local to each participant, opened automatically when the session starts.
+        // Lets participants push exam content to the shared window via pinch-and-hold.
+        WindowGroup(id: "remoteControls") {
+            RemoteControlsView()
+                .environment(store)
+        }
+        .defaultSize(width: 760, height: 460)
+        .windowResizability(.contentSize)
 
         // Mixed-immersion drawing space.
         // Opened/dismissed from ContentView via openImmersiveSpace / dismissImmersiveSpace.

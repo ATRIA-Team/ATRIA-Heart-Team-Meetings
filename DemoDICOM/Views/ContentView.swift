@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 /// Invisible UIView that finds its parent UIWindow and toggles
 /// `isUserInteractionEnabled` so visionOS stops routing stylus
 /// button presses as indirect-pointer clicks into this window.
-private struct WindowInteractionToggle: UIViewRepresentable {
+struct WindowInteractionToggle: UIViewRepresentable {
     var enabled: Bool
 
     func makeUIView(context: Context) -> UIView {
@@ -39,79 +39,90 @@ struct ContentView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
+    private enum ActivePicker { case folder, html, pdf }
+    @State private var activePicker: ActivePicker? = nil
+    @State private var isPickerPresented = false
+
     var body: some View {
-        // `@Bindable` lets us derive SwiftUI bindings from the @Observable store
-        // for modifiers that require them (fileImporter, etc.).
         @Bindable var store = store
 
-        NavigationStack {
-            Group {
-                if store.sliceImages.isEmpty && !store.isLoading {
-                    emptyStateView
-                } else {
-                    sliceViewerView
-                }
+        Group {
+            if store.sliceImages.isEmpty && !store.isLoading {
+                emptyStateView
+            } else {
+                sliceViewerView
             }
-            .fileImporter(
-                isPresented: $store.isShowingFolderPicker,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result {
-                case .success(let urls):
-                    if let url = urls.first { store.importFolder(url: url) }
-                case .failure(let error):
-                    store.errorMessage = "File picker error: \(error.localizedDescription)"
-                }
-            }
-            .navigationTitle("DICOM Viewer")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    sharePlayButton
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    drawingToggleButton
-                    Button {
-                        store.isShowingHTMLFilePicker = true
-                    } label: {
-                        Label("Open HTML", systemImage: "doc.richtext")
+        }
+        .navigationTitle("DICOM Viewer")
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if store.loadedDICOMExamTypes.count > 1 {
+                    Picker("Exam", selection: Binding(
+                        get: { store.selectedDICOMExamType ?? .ct },
+                        set: { store.selectedDICOMExamType = $0 }
+                    )) {
+                        ForEach(store.loadedDICOMExamTypes, id: \.self) { examType in
+                            Text(examType.displayName).tag(examType)
+                        }
                     }
-                    Button {
-                        store.isShowingFolderPicker = true
-                    } label: {
-                        Label("Import CT Scan", systemImage: "folder.badge.plus")
-                    }
+                    .pickerStyle(.segmented)
                 }
             }
-            .overlay {
-                if store.isLoading { loadingOverlay }
-            }
-            .alert(
-                "Error",
-                isPresented: Binding(
-                    get: { store.errorMessage != nil },
-                    set: { if !$0 { store.errorMessage = nil } }
-                )
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(store.errorMessage ?? "")
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                drawingToggleButton
+                Button { activePicker = .html;   isPickerPresented = true } label: {
+                    Label("Open HTML", systemImage: "doc.richtext")
+                }
+                Button { activePicker = .folder; isPickerPresented = true } label: {
+                    Label("Import CT Scan", systemImage: "folder.badge.plus")
+                }
+                Button { activePicker = .pdf;    isPickerPresented = true } label: {
+                    Label("Open PDF", systemImage: "rectangle.and.paperclip")
+                }
             }
         }
         .fileImporter(
-            isPresented: $store.isShowingHTMLFilePicker,
-            allowedContentTypes: [.html],
+            isPresented: $isPickerPresented,
+            allowedContentTypes: {
+                switch activePicker {
+                case .folder: return [.folder]
+                case .html: return [.html]
+                case .pdf, nil: return [.pdf]
+                }
+            }(),
             allowsMultipleSelection: false
         ) { result in
-            switch result {
-            case .success(let urls):
-                if let url = urls.first {
-                    store.htmlFileURL = url
-                    openWindow(id: "htmlViewer")
+            defer { activePicker = nil }
+            guard case .success(let urls) = result, let url = urls.first else {
+                if case .failure(let error) = result {
+                    store.errorMessage = "File picker error: \(error.localizedDescription)"
                 }
-            case .failure(let error):
-                store.errorMessage = "HTML file picker error: \(error.localizedDescription)"
+                return
             }
+            switch activePicker {
+            case .folder: store.importFolder(url: url)
+            case .html:
+                store.htmlFileURL = url
+                openWindow(id: "htmlViewer")
+            case .pdf:
+                store.pdfFileURL = url
+                openWindow(id: "pdfViewer")
+            case nil: break
+            }
+        }
+        .overlay {
+            if store.isLoading { loadingOverlay }
+        }
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { store.errorMessage != nil },
+                set: { if !$0 { store.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.errorMessage ?? "")
         }
         // Disable window interaction while drawing so the stylus button
         // isn't intercepted as a pointer click by visionOS.
@@ -121,42 +132,6 @@ struct ContentView: View {
     }
 
     // MARK: - Subviews
-
-    /// Shows SharePlay session status, or an invitation button when not in session.
-    private var sharePlayButton: some View {
-        Group {
-            if store.sharePlay.isInSession {
-                Label(
-                    "\(store.sharePlay.participantCount) in session",
-                    systemImage: "shareplay"
-                )
-                .foregroundStyle(.green)
-                .labelStyle(.titleAndIcon)
-            } else {
-                Button {
-                    Task { await store.sharePlay.activate() }
-                } label: {
-                    Label(
-                        store.sharePlay.isEligibleForGroupSession
-                            ? "Invite to SharePlay"
-                            : "SharePlay",
-                        systemImage: "shareplay"
-                    )
-                }
-            }
-        }
-        .alert(
-            "SharePlay Unavailable",
-            isPresented: Binding(
-                get: { store.sharePlay.activationError != nil },
-                set: { if !$0 { store.sharePlay.activationError = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(store.sharePlay.activationError ?? "")
-        }
-    }
 
     private var emptyStateView: some View {
         VStack(spacing: 24) {
@@ -174,7 +149,8 @@ struct ContentView: View {
                 .multilineTextAlignment(.center)
 
             Button {
-                store.isShowingFolderPicker = true
+                activePicker = .folder
+                isPickerPresented = true
             } label: {
                 Label("Import CT Scan", systemImage: "folder.badge.plus")
                     .font(.headline)

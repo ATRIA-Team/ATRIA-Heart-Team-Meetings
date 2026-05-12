@@ -14,18 +14,21 @@ struct RootView: View {
 
     @Environment(DICOMStore.self) private var store
 
+    @Environment(\.openWindow) private var openWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     var body: some View {
         Group {
-            // Show the lobby only while a session exists AND the session hasn't
-            // officially started. Once `sessionHasStarted` latches to true, all
-            // participants stay in the viewer even if a late joiner connects.
-            if store.sharePlay.isInSession && !store.sharePlay.sessionHasStarted {
-                LobbyView()
+            if store.sharePlay.isInSession || DebugFlags.bypassSharePlay {
+                if store.sharePlay.sessionHasStarted {
+                    // Main window becomes the shared window once session is live.
+                    NavigationStack { SharedWindow() }
+                } else {
+                    NavigationStack { LobbyView() }
+                }
             } else {
-                MainTabView()
+                HomeView2()
             }
         }
         .task {
@@ -34,10 +37,18 @@ struct RootView: View {
                 await store.sharePlay.handleIncomingSession(session)
             }
         }
+        .onChange(of: store.sharePlay.sessionHasStarted) { _, started in
+            if started {
+                // Main window transitions to SharedWindow in-place; only the
+                // remote-controls companion panel needs to be opened separately.
+                openWindow(id: "remoteControls")
+            }
+        }
         .onChange(of: store.isDrawingActive) { _, newValue in
             // Ensure the immersive drawing space is synced for all participants.
             Task {
                 if newValue {
+                    store.suppressDrawingToolsPanel = true
                     await openImmersiveSpace(id: "DrawingSpace")
                 } else {
                     await dismissImmersiveSpace()

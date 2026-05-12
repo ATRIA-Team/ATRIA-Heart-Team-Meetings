@@ -9,63 +9,80 @@ import UniformTypeIdentifiers
 /// Pre-session lobby shown while a SharePlay session is active but not all
 /// participants have loaded their local DICOM folder yet.
 ///
-/// Each participant imports their own copy of the study. When the last participant
+/// Each participant imports their own copy of every exam file. When the last participant
 /// marks themselves ready, `SharePlayCoordinator.sessionHasStarted` latches to
 /// `true` and `RootView` automatically transitions everyone to the viewer.
 struct LobbyView: View {
 
     @Environment(DICOMStore.self) private var store
 
+    private enum ActivePicker {
+        case echo, ct, coro, medicalHistory, vitals, bloodTests, other
+        var allowedTypes: [UTType] {
+            switch self {
+            case .echo, .ct, .coro: return [.folder]
+            case .medicalHistory, .bloodTests, .vitals, .other: return [.pdf, .image]
+            }
+        }
+    }
+    @State private var activePicker: ActivePicker? = nil
+    @State private var isPickerPresented = false
+
     var body: some View {
         @Bindable var store = store
 
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 28) {
-                    headerSection
-                    participantsSection
-                    if hasMismatchWarning { mismatchBanner }
-                    importSection
-                }
-                .padding(24)
+        ScrollView {
+            VStack(spacing: 28) {
+                headerSection
+                participantsSection
+                if hasMismatchWarning { mismatchBanner }
+                importSection
+                if !uploadedFileEntries.isEmpty { uploadedFilesSection }
             }
-            .navigationTitle("Session Lobby")
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Label(
-                        "\(store.sharePlay.participantCount) connected",
-                        systemImage: "shareplay"
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
-            }
-            .fileImporter(
-                isPresented: $store.isShowingFolderPicker,
-                allowedContentTypes: [.folder],
-                allowsMultipleSelection: false
-            ) { result in
-                switch result {
-                case .success(let urls):
-                    if let url = urls.first { store.importFolder(url: url) }
-                case .failure(let error):
-                    store.errorMessage = "File picker error: \(error.localizedDescription)"
-                }
-            }
-            .overlay {
-                if store.isLoading { loadingOverlay }
-            }
-            .alert(
-                "Error",
-                isPresented: Binding(
-                    get: { store.errorMessage != nil },
-                    set: { if !$0 { store.errorMessage = nil } }
+            .padding(24)
+        }
+        .navigationTitle("Session lobby")
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Label(
+                    "\(store.sharePlay.participantCount) connected",
+                    systemImage: "shareplay"
                 )
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(store.errorMessage ?? "")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
             }
+        }
+        .fileImporter(
+            isPresented: $isPickerPresented,
+            allowedContentTypes: activePicker?.allowedTypes ?? [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            defer { activePicker = nil }
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            switch activePicker {
+            case .echo:           store.importFolder(url: url, examType: .echo)
+            case .ct:             store.importFolder(url: url, examType: .ct)
+            case .coro:           store.importFolder(url: url, examType: .coro)
+            case .medicalHistory: store.medicalHistoryURL = url; store.broadcastDocumentChange(.medicalHistory, url: url)
+            case .vitals:         store.vitalsURL = url;         store.broadcastDocumentChange(.vitals,         url: url)
+            case .bloodTests:     store.bloodTestURL = url;      store.broadcastDocumentChange(.bloodTests,     url: url)
+            case .other:          store.otherFileURL = url;      store.broadcastDocumentChange(.other,          url: url)
+            case nil:             break
+            }
+        }
+        .overlay {
+            if store.isLoading { loadingOverlay }
+        }
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { store.errorMessage != nil },
+                set: { if !$0 { store.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.errorMessage ?? "")
         }
     }
 
@@ -78,10 +95,10 @@ struct LobbyView: View {
                 .foregroundStyle(.tint)
                 .symbolEffect(.pulse)
 
-            Text("Collaborative Session")
+            Text("Collaborative session")
                 .font(.title2.weight(.semibold))
 
-            Text("Each participant loads their own local copy of the DICOM folder. The session begins automatically once everyone is ready.")
+            Text("Each participant loads their own local copy of every exam file. The session can be started when all participants have uploaded at least one file of any category.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -92,7 +109,6 @@ struct LobbyView: View {
     // MARK: - Participants
 
     private var sortedParticipants: [ParticipantReadyState] {
-        // Local participant always appears first
         store.sharePlay.participantStates.values
             .sorted { $0.isLocal && !$1.isLocal }
     }
@@ -126,8 +142,6 @@ struct LobbyView: View {
 
     // MARK: - Mismatch warning
 
-    /// Show a warning if two or more ready participants have different slice counts,
-    /// which likely means they loaded different series.
     private var hasMismatchWarning: Bool {
         let readyCounts = store.sharePlay.participantStates.values
             .filter { $0.isReady }
@@ -158,6 +172,95 @@ struct LobbyView: View {
         )
     }
 
+    // MARK: - Uploaded files
+
+    private struct FileEntry: Identifiable {
+        let id = UUID()
+        let icon: String
+        let tint: Color
+        let label: String
+        let detail: String
+        let removeAction: () -> Void
+    }
+
+    private var uploadedFileEntries: [FileEntry] {
+        var entries: [FileEntry] = []
+        let dicomTypes: [(ExamType, String, String)] = [
+            (.echo,  "waveform.path.ecg.text.clipboard.fill", "Echo"),
+            (.ct,    "waveform.path.ecg.rectangle.fill",      "CT Scan"),
+            (.coro,  "heart.fill",                            "Coronary"),
+        ]
+        for (examType, icon, label) in dicomTypes {
+            if let bundle = store.dicomExams[examType], bundle.sliceCount > 0 {
+                entries.append(FileEntry(icon: icon, tint: .blue, label: label,
+                                         detail: "\(bundle.sliceCount) slices",
+                                         removeAction: { [store] in store.removeExam(examType) }))
+            }
+        }
+        let docTypes: [(URL?, String, String, Color, () -> Void)] = [
+            (store.medicalHistoryURL, "list.bullet.clipboard.fill", "Medical History", .green,  { store.medicalHistoryURL = nil }),
+            (store.vitalsURL,         "stethoscope",                "Vitals",          .orange, { store.vitalsURL         = nil }),
+            (store.bloodTestURL,      "drop.fill",                  "Blood Tests",     .red,    { store.bloodTestURL      = nil }),
+            (store.otherFileURL,      "heart.text.clipboard.fill",  "Other",           .purple, { store.otherFileURL      = nil }),
+        ]
+        for (url, icon, label, tint, remove) in docTypes {
+            if let url {
+                entries.append(FileEntry(icon: icon, tint: tint, label: label,
+                                         detail: url.lastPathComponent,
+                                         removeAction: remove))
+            }
+        }
+        return entries
+    }
+
+    private var uploadedFilesSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Label("Loaded files", systemImage: "tray.full.fill")
+                .font(.headline)
+                .padding(.bottom, 14)
+
+            VStack(spacing: 0) {
+                ForEach(uploadedFileEntries) { entry in
+                    HStack(spacing: 12) {
+                        Image(systemName: entry.icon)
+                            .foregroundStyle(entry.tint)
+                            .font(.body)
+                            .frame(width: 28)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.label)
+                                .font(.subheadline.weight(.medium))
+                            Text(entry.detail)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .font(.body)
+
+                        Button(role: .destructive, action: entry.removeAction) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.body)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.vertical, 10)
+
+                    if entry.id != uploadedFileEntries.last?.id {
+                        Divider().padding(.leading, 40)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
     // MARK: - Import section
 
     private var localState: ParticipantReadyState? {
@@ -170,70 +273,57 @@ struct LobbyView: View {
 
     @ViewBuilder
     private var importSection: some View {
-        if localState?.isReady == true {
-            // Already loaded — show summary and offer re-import
-            VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Upload exam files")
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.title2)
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("Your files are loaded")
-                            .font(.subheadline.weight(.medium))
-                        if let local = localState {
-                            let desc = local.seriesDescription.isEmpty
-                                ? "No series description"
-                                : local.seriesDescription
-                            Text("\(local.sliceCount) slices · \(desc)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Spacer()
-
-                    Button("Change") {
-                        store.isShowingFolderPicker = true
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                .padding()
-                .background(.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(.green.opacity(0.3), lineWidth: 1)
-                )
-
-                if waitingCount > 0 {
-                    HStack(spacing: 8) {
-                        ProgressView().controlSize(.small)
-                        Text("Waiting for \(waitingCount) participant\(waitingCount == 1 ? "" : "s") to load…")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
+                    examButton(.medicalHistory, icon: "list.bullet.clipboard.fill", text: "Medical History") { activePicker = .medicalHistory; isPickerPresented = true }
+                    examButton(.vitals,         icon: "stethoscope",                text: "Vitals")          { activePicker = .vitals;         isPickerPresented = true }
+                    examButton(.bloodTests,     icon: "drop.fill",                  text: "Blood Tests")     { activePicker = .bloodTests;     isPickerPresented = true }
+                    examButton(.echo,           icon: "waveform.path.ecg.text.clipboard.fill", text: "Echo") { activePicker = .echo;           isPickerPresented = true }
+                    examButton(.ct,   icon: "waveform.path.ecg.rectangle.fill", text: "CT")    { activePicker = .ct;   isPickerPresented = true }
+                    examButton(.coro, icon: "heart.fill",                        text: "Coro")  { activePicker = .coro; isPickerPresented = true }
+                    examButton(.other, icon: "heart.text.clipboard.fill",        text: "Other") { activePicker = .other; isPickerPresented = true }
                 }
             }
-        } else {
-            // Not yet loaded — show the import prompt
-            VStack(spacing: 10) {
-                Button {
-                    store.isShowingFolderPicker = true
-                } label: {
-                    Label("Import Your DICOM Folder", systemImage: "folder.badge.plus")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                }
-                .buttonStyle(.borderedProminent)
 
-                Text("Load the same DICOM folder as your session partners.")
+            let loadedCount = localState?.loadedExams.count ?? 0
+            Text("\(loadedCount) of \(ExamType.allCases.count) exam types uploaded")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            let canStart = store.sharePlay.allParticipantsReady || DebugFlags.bypassSharePlay
+            Button {
+                store.sharePlay.startSession()
+            } label: {
+                Label("Start Session", systemImage: "play.circle.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!canStart)
+
+            if !canStart {
+                Text("Waiting for all participants to upload at least one file…")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
+    }
+
+    /// Exam button that shows a checkmark icon when that exam type is already loaded.
+    @ViewBuilder
+    private func examButton(_ examType: ExamType, icon: String, text: String, action: @escaping () -> Void) -> some View {
+        let isLoaded = localState?.loadedExams.contains(examType) == true
+        RemoteControlButton(
+            icon: isLoaded ? "checkmark.circle.fill" : icon,
+            text: text,
+            action: action
+        )
     }
 
     // MARK: - Loading overlay
@@ -258,7 +348,6 @@ private struct ParticipantRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Status indicator
             Group {
                 if state.isReady {
                     Image(systemName: "checkmark.circle.fill")
@@ -272,7 +361,6 @@ private struct ParticipantRow: View {
             }
             .frame(width: 28)
 
-            // Name + detail
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(state.isLocal ? "You" : "Participant")
@@ -284,22 +372,20 @@ private struct ParticipantRow: View {
                     }
                 }
 
-                if state.isReady {
-                    let desc = state.seriesDescription.isEmpty
-                        ? "No series description"
-                        : state.seriesDescription
-                    Text("\(state.sliceCount) slices · \(desc)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Waiting to load files…")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
+                let loaded = state.loadedExams.count
+                let total  = ExamType.allCases.count
+                Text("\(loaded) / \(total) exams loaded")
+                    .font(.caption)
+                    .foregroundStyle(state.isReady ? .green : .secondary)
             }
 
             Spacer()
         }
         .padding(.vertical, 10)
     }
+}
+
+#Preview {
+    LobbyView()
+        .environment(DICOMStore())
 }

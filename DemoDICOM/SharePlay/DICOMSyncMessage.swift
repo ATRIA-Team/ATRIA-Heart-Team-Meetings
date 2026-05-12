@@ -5,10 +5,62 @@
 
 import Foundation
 
+// MARK: - ExamType
+
+/// All exam types a participant can load for a collaborative session.
+enum ExamType: String, Codable, CaseIterable, Hashable {
+    case medicalHistory
+    case vitals
+    case bloodTests
+    case echo
+    case ct
+    case coro
+    case other
+
+    /// Exam types every participant must load before the session can start.
+    /// Adjust this set to relax or tighten the readiness requirement.
+    static var allRequired: Set<ExamType> { [.medicalHistory] }
+
+    /// Human-readable label used in the UI.
+    var displayName: String {
+        switch self {
+        case .medicalHistory: return "Medical History"
+        case .vitals:         return "Vitals"
+        case .bloodTests:     return "Blood Tests"
+        case .echo:           return "Echo"
+        case .ct:             return "CT"
+        case .coro:           return "Coro"
+        case .other:          return "Other"
+        }
+    }
+}
+
+// MARK: - SharedPDFState
+
+/// Scroll and zoom state for the shared PDF document, synced across all participants.
+struct SharedPDFState: Codable, Equatable {
+    var page: Int
+    var x: Double
+    var y: Double
+    var scaleFactor: Double
+}
+
+// MARK: - ExamMetadata
+
+/// Lightweight lobby metadata for one loaded exam — never contains pixel data or file contents.
+enum ExamMetadata: Codable {
+    /// DICOM exam (echo, CT, coro): carries slice count and series info for the lobby UI.
+    case dicom(sliceCount: Int, seriesDescription: String, patientName: String)
+    /// Document exam (medical history, vitals, blood tests, other): carries the file name.
+    case document(fileName: String)
+}
+
+// MARK: - DICOMSyncMessage
+
 /// A lightweight message exchanged between SharePlay participants.
 ///
-/// Only control signals cross the wire — no DICOM pixel data is ever transmitted.
-/// Pixel data always stays on each device's local storage.
+/// Only control signals cross the wire — no pixel data or file contents are ever transmitted.
+/// Each participant loads their own local copy of every exam file.
 struct DICOMSyncMessage: Codable {
 
     enum Kind: Codable {
@@ -17,38 +69,42 @@ struct DICOMSyncMessage: Codable {
         /// A participant scrolled to a new slice.
         case sliceChanged(index: Int)
         /// A participant changed the window/level preset.
-        /// Uses the raw `Int` value of `MedicalPreset` for Codable compatibility.
         case presetChanged(rawValue: Int)
 
-        // MARK: - Lobby readiness (sent during lobby phase)
+        // MARK: - Lobby readiness
 
-        /// A participant has finished loading their local DICOM folder.
-        case participantReady(sliceCount: Int, seriesDescription: String, patientName: String)
-        /// A participant cleared their data or started a fresh import.
-        case participantNotReady
-        /// A participant (local or remote) cleared all 3D immersive drawings.
+        /// A participant finished loading one exam type.
+        case examReady(type: ExamType, metadata: ExamMetadata)
+        /// A participant cleared or re-started loading one exam type.
+        case examNotReady(type: ExamType)
+        /// A participant manually started the session from the lobby button.
+        case sessionStarted
+
+        /// A participant cleared all 3D immersive drawings.
         case clearDrawings
-        /// A participant removed a specific set of their own 2D annotation strokes
-        /// from a specific session. Only the listed strokes are removed; others are preserved.
+        /// A participant removed specific 2D annotation strokes from a session.
         case removeAnnotationStrokes(sessionID: UUID, strokeIDs: [UUID])
 
         // MARK: - Annotation Sessions
 
-        /// A participant opened (or re-opened) an annotation window for the given session.
-        /// `sliceIndex` tells receiving peers which slice to freeze as the session background.
-        /// Receivers increment the session's open-count; if the session is unknown they create it.
         case annotationSessionOpened(sessionID: UUID, sliceIndex: Int)
-
-        /// A participant closed their annotation window for the given session.
-        /// Receivers decrement the session's open-count and remove it when it reaches zero.
         case annotationSessionClosed(sessionID: UUID)
 
         // MARK: - Drawing Space
 
-        /// A participant opened the immersive drawing space.
         case drawingSpaceOpened
-        /// A participant closed the immersive drawing space.
         case drawingSpaceClosed
+
+        // MARK: - Shared Window
+
+        /// A participant pushed an exam type into the shared window (nil = cleared).
+        case sharedWindowChanged(examType: ExamType?)
+
+        /// A participant pushed an annotation session into the shared window (nil = cleared).
+        case sharedAnnotationChanged(sessionID: UUID?)
+
+        /// A participant scrolled or zoomed the shared PDF document.
+        case pdfScrollChanged(page: Int, x: Double, y: Double, scaleFactor: Double)
     }
 
     let kind: Kind

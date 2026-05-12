@@ -230,15 +230,27 @@ struct AnnotationView: View {
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
+            let isSharing = store.sharedAnnotationSessionID == sessionID
+            Button {
+                store.sharedAnnotationSessionID = isSharing ? nil : sessionID
+            } label: {
+                HStack {
+                    Image(systemName: isSharing ? "checkmark.circle.fill" : "shareplay")
+                    Text(isSharing ? "Sharing" : "Share annotation")
+                }
+            }
             Button {
                 saveAnnotation()
             } label: {
                 Label("Save", systemImage: "square.and.arrow.down")
             }
-            .disabled(canvasState.strokeCount == 0)
 
             Button {
-                canvasState.undo()
+                if let undoneID = canvasState.undo() {
+                    localStrokeIDs.remove(undoneID)
+                    store.removeAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
+                    store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
+                }
             } label: {
                 Label("Undo", systemImage: "arrow.uturn.backward")
             }
@@ -251,9 +263,39 @@ struct AnnotationView: View {
                 canvasState.removeStrokes(ids: ids)
                 localStrokeIDs = []
             } label: {
-                Label("Clear My Strokes", systemImage: "trash")
+                Label("Clear my strokes", systemImage: "trash")
             }
             .disabled(localStrokeIDs.isEmpty)
         }
     }
+}
+
+#Preview {
+    // Build a mock CGImage (grey gradient, 512×512) that stands in for a DICOM slice.
+    let previewImage: CGImage = {
+        let width = 512, height = 512
+        let ctx = CGContext(
+            data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
+        for y in 0..<height {
+            let brightness = CGFloat(y) / CGFloat(height)
+            ctx.setFillColor(CGColor(gray: brightness, alpha: 1))
+            ctx.fill(CGRect(x: 0, y: y, width: width, height: 1))
+        }
+        return ctx.makeImage()!
+    }()
+
+    // Seed the store with a live annotation session so the view renders its canvas.
+    let store = DICOMStore()
+    let sessionID = UUID()
+    store.createAnnotationSession(id: sessionID, sliceIndex: 4, image: previewImage)
+
+    let container = try! ModelContainer(for: SavedAnnotation.self, configurations: .init(isStoredInMemoryOnly: true))
+
+    return AnnotationView(sessionID: sessionID)
+        .environment(store)
+        .modelContainer(container)
 }

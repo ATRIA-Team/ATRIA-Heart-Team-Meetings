@@ -22,9 +22,11 @@ final class PencilCanvasState {
         didSet { syncCount() }
     }
 
-    func undo() {
-        canvasView?.undo()
+    /// Undoes the last local stroke and returns its ID, or `nil` if nothing to undo.
+    func undo() -> UUID? {
+        let id = canvasView?.undo()
         syncCount()
+        return id
     }
 
     func clear() {
@@ -115,10 +117,12 @@ final class PencilCanvasUIView: UIView {
         }
     }
 
-    func undo() {
-        guard let last = strokeLayers.popLast() else { return }
+    @discardableResult
+    func undo() -> UUID? {
+        guard let last = strokeLayers.popLast() else { return nil }
         last.layer.removeFromSuperlayer()
         strokeCount = strokeLayers.count
+        return last.id
     }
 
     func clear() {
