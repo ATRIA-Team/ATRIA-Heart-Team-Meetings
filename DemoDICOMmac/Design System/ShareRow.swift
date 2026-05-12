@@ -11,32 +11,22 @@ struct ShareRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Share Folder")
+            Text("Folder Ready")
                 .font(.headline)
                 .padding(.leading, 2)
 
             HStack(spacing: 8) {
-                NativeShareButton(items: [model.createdFolderURL as Any]) {
-                    ActionTileContent(icon: "square.and.arrow.up", text: "Share")
-                }
-
-                ActionTile(icon: "icloud.and.arrow.up", text: "Move to iCloud") {
-                    if let moved = model.moveToICloud() { presentSharePicker(for: moved) }
-                }
-
                 ActionTile(icon: "folder", text: "Show in Finder") {
                     if let url = model.createdFolderURL {
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                 }
+
+                ActionTile(icon: "envelope.badge.person.crop", text: "Resend Email") {
+                    model.shareViaEmailIfNeeded()
+                }
+                .disabled(model.collaboratorEmails.isEmpty)
             }
         }
-    }
-
-    private func presentSharePicker(for url: URL) {
-        let picker = NSSharingServicePicker(items: [url])
-        guard let window = NSApp.keyWindow, let view = window.contentView else { return }
-        let rect = NSRect(x: view.bounds.midX, y: view.bounds.midY, width: 1, height: 1)
-        picker.show(relativeTo: rect, of: view, preferredEdge: .minY)
     }
 }

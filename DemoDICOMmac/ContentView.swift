@@ -54,6 +54,7 @@ struct ContentView: View {
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let parent = panel.url else { return }
         model.createFolder(named: folderName, in: parent)
+        model.shareViaEmailIfNeeded()
     }
 }
 

@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import AppKit
 internal import Combine
 
 @MainActor
@@ -13,6 +14,7 @@ final class FolderModel: ObservableObject {
     )
     @Published var createdFolderURL: URL?
     @Published var status: String?
+    @Published var collaboratorEmails: [String] = []
 
     var totalCount: Int { files.values.reduce(0) { $0 + $1.count } }
 
@@ -68,6 +70,36 @@ final class FolderModel: ObservableObject {
         } catch {
             status = "iCloud move failed: \(error.localizedDescription)"
             return nil
+        }
+    }
+
+    func shareViaEmailIfNeeded() {
+        guard !collaboratorEmails.isEmpty else { return }
+        let folderURL = moveToICloud() ?? createdFolderURL
+        guard let folderURL else { return }
+
+        let recipients = collaboratorEmails.joined(separator: ",")
+        let folderName = folderURL.lastPathComponent
+        let subject = "Shared Patient Folder: \(folderName)"
+        let body = """
+        Hi,
+
+        I'm sharing a patient folder with you via iCloud Drive.
+
+        Folder: \(folderName)
+
+        You can access it from iCloud Drive on your device.
+        """
+
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = recipients
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: subject),
+            URLQueryItem(name: "body", value: body)
+        ]
+        if let url = components.url {
+            NSWorkspace.shared.open(url)
         }
     }
 
