@@ -61,48 +61,52 @@ struct PDFViewRepresentable: UIViewRepresentable {
         private var accessedURL: URL?
         private var sendTask: Task<Void, Never>?
         private weak var pdfView: PDFView?
+        private weak var scrollView: UIScrollView?
 
-        // Prevents re-broadcasting state that was just received from a peer.
+        // Raised while applying a received state so KVO/notification observers don't re-broadcast.
         private var isApplyingRemoteState = false
-        // Prevents re-applying state that was already set (avoids interrupting user scroll).
+        // Last state sent or applied — skips no-op updates in both directions.
         private var lastSentOrAppliedState: SharedPDFState?
         private var contentOffsetObservation: NSKeyValueObservation?
+        // Cancellable work item for the async contentOffset application after a scale change.
+        private var applyWorkItem: DispatchWorkItem?
 
         // MARK: Setup
 
         func setup(pdfView: PDFView) {
             self.pdfView = pdfView
-            NotificationCenter.default.addObserver(self, selector: #selector(handlePDFChange(_:)),
-                name: .PDFViewPageChanged, object: pdfView)
-            NotificationCenter.default.addObserver(self, selector: #selector(handlePDFChange(_:)),
+            NotificationCenter.default.addObserver(self, selector: #selector(handleScaleChanged(_:)),
                 name: .PDFViewScaleChanged, object: pdfView)
-            observeScrollView(in: pdfView)
-        }
-
-        private func observeScrollView(in view: UIView) {
-            for sub in view.subviews {
-                if let sv = sub as? UIScrollView {
-                    contentOffsetObservation = sv.observe(\.contentOffset, options: [.new]) { [weak self] _, _ in
-                        self?.scheduleSend()
-                    }
-                    return
-                }
-                observeScrollView(in: sub)
+            self.scrollView = findScrollView(in: pdfView)
+            contentOffsetObservation = scrollView?.observe(\.contentOffset, options: [.new]) { [weak self] _, _ in
+                // Guard prevents re-broadcasting while we apply a remote state.
+                guard !(self?.isApplyingRemoteState ?? true) else { return }
+                self?.scheduleSend()
             }
         }
 
-        // MARK: Notifications / scroll
+        private func findScrollView(in view: UIView) -> UIScrollView? {
+            for sub in view.subviews {
+                if let sv = sub as? UIScrollView { return sv }
+                if let found = findScrollView(in: sub) { return found }
+            }
+            return nil
+        }
 
-        @objc private func handlePDFChange(_ notification: Notification) {
+        // MARK: Scale change (pinch-to-zoom may not always move contentOffset)
+
+        @objc private func handleScaleChanged(_ notification: Notification) {
             guard !isApplyingRemoteState else { return }
             scheduleSend()
         }
+
+        // MARK: Debounced send (~50 ms gives real-time feel without flooding the network)
 
         private func scheduleSend() {
             guard onStateChange != nil else { return }
             sendTask?.cancel()
             sendTask = Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .milliseconds(150))
+                try? await Task.sleep(for: .milliseconds(50))
                 guard !Task.isCancelled else { return }
                 self?.captureAndSend()
             }
@@ -115,14 +119,19 @@ struct PDFViewRepresentable: UIViewRepresentable {
             onStateChange?(state)
         }
 
+        // State is encoded as normalized scroll-view content offset so it round-trips
+        // perfectly without PDFDestination coordinate ambiguity.
         private func captureState(from pdfView: PDFView) -> SharedPDFState? {
             guard let document = pdfView.document,
-                  let page = pdfView.currentPage else { return nil }
-            let pt = pdfView.currentDestination?.point ?? .zero
+                  let page = pdfView.currentPage,
+                  let sv = scrollView,
+                  sv.contentSize.width > 0, sv.contentSize.height > 0 else { return nil }
+            let nx = Double(sv.contentOffset.x / sv.contentSize.width)
+            let ny = Double(sv.contentOffset.y / sv.contentSize.height)
             return SharedPDFState(
                 page: document.index(for: page),
-                x: (Double(pt.x) * 100).rounded() / 100,
-                y: (Double(pt.y) * 100).rounded() / 100,
+                x: (nx * 100000).rounded() / 100000,
+                y: (ny * 100000).rounded() / 100000,
                 scaleFactor: (Double(pdfView.scaleFactor) * 10000).rounded() / 10000
             )
         }
@@ -131,18 +140,27 @@ struct PDFViewRepresentable: UIViewRepresentable {
 
         func apply(state: SharedPDFState, to pdfView: PDFView) {
             guard state != lastSentOrAppliedState else { return }
-            guard let document = pdfView.document,
-                  state.page < document.pageCount,
-                  let page = document.page(at: state.page) else { return }
+            guard let sv = scrollView else { return }
             lastSentOrAppliedState = state
             isApplyingRemoteState = true
+
+            // Cancel any previously pending offset application (newest state wins).
+            applyWorkItem?.cancel()
+
             pdfView.scaleFactor = CGFloat(state.scaleFactor)
-            pdfView.go(to: PDFDestination(page: page, at: CGPoint(x: state.x, y: state.y)))
-            // Clear flag after PDFKit has had a chance to fire all synchronous notifications.
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .milliseconds(100))
-                self?.isApplyingRemoteState = false
+
+            // Apply content offset after the layout pass triggered by the scale change.
+            let work = DispatchWorkItem { [weak self, weak sv] in
+                guard let self, let sv else { return }
+                let offset = CGPoint(
+                    x: CGFloat(state.x) * sv.contentSize.width,
+                    y: CGFloat(state.y) * sv.contentSize.height
+                )
+                sv.setContentOffset(offset, animated: false)
+                self.isApplyingRemoteState = false
             }
+            applyWorkItem = work
+            DispatchQueue.main.async(execute: work)
         }
 
         // MARK: Document loading
@@ -151,8 +169,8 @@ struct PDFViewRepresentable: UIViewRepresentable {
             stopAccess()
             let didAccess = url.startAccessingSecurityScopedResource()
             if didAccess { accessedURL = url }
-            defer { if didAccess { stopAccess() } }
             guard let document = PDFDocument(url: url) else {
+                if didAccess { stopAccess() }
                 pdfView.document = nil
                 return
             }
@@ -167,6 +185,8 @@ struct PDFViewRepresentable: UIViewRepresentable {
         deinit {
             stopAccess()
             sendTask?.cancel()
+            applyWorkItem?.cancel()
+            contentOffsetObservation = nil
             NotificationCenter.default.removeObserver(self)
         }
     }
