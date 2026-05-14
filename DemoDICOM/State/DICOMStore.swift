@@ -296,7 +296,8 @@ final class DICOMStore {
             sharedAnnotationSessionID = sessionID
         case .pdfScrollChanged(let page, let x, let y, let scaleFactor):
             sharedPDFState = SharedPDFState(page: page, x: x, y: y, scaleFactor: scaleFactor)
-        case .examReady, .examNotReady, .sessionStarted, .clearDrawings, .removeAnnotationStrokes:
+        case .examReady, .examNotReady, .sessionStarted, .clearDrawings, .removeAnnotationStrokes,
+             .undoDrawingStroke, .redoDrawingStroke:
             break
         }
     }
