@@ -55,6 +55,10 @@ struct DICOMExamBundle {
 @Observable
 final class DICOMStore {
 
+    // MARK: - iCloud Folder
+
+    let iCloudManager = ICloudFolderManager()
+
     // MARK: - SharePlay
 
     let sharePlay = SharePlayCoordinator()

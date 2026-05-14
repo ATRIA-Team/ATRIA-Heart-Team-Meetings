@@ -17,10 +17,10 @@ struct LobbyView: View {
     @Environment(DICOMStore.self) private var store
 
     private enum ActivePicker {
-        case echo, ct, coro, medicalHistory, vitals, bloodTests, other
+        case echo, ct, coro, medicalHistory, vitals, bloodTests, other, iCloudFolder
         var allowedTypes: [UTType] {
             switch self {
-            case .echo, .ct, .coro: return [.folder]
+            case .echo, .ct, .coro, .iCloudFolder: return [.folder]
             case .medicalHistory, .bloodTests, .vitals, .other: return [.pdf, .image]
             }
         }
@@ -36,6 +36,7 @@ struct LobbyView: View {
                 headerSection
                 participantsSection
                 if hasMismatchWarning { mismatchBanner }
+                iCloudSection
                 importSection
                 if !uploadedFileEntries.isEmpty { uploadedFilesSection }
             }
@@ -67,6 +68,9 @@ struct LobbyView: View {
             case .vitals:         store.vitalsURL = url;         store.broadcastDocumentChange(.vitals,         url: url)
             case .bloodTests:     store.bloodTestURL = url;      store.broadcastDocumentChange(.bloodTests,     url: url)
             case .other:          store.otherFileURL = url;      store.broadcastDocumentChange(.other,          url: url)
+            case .iCloudFolder:
+                try? store.iCloudManager.selectFolder(url)
+                store.iCloudManager.loadAllFiles(into: store)
             case nil:             break
             }
         }
@@ -259,6 +263,74 @@ struct LobbyView: View {
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: - iCloud section
+
+    private var iCloudSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("iCloud Folder", systemImage: "icloud.fill")
+                .font(.headline)
+
+            if store.iCloudManager.hasFolder {
+                HStack(spacing: 12) {
+                    Image(systemName: "folder.fill.badge.checkmark")
+                        .foregroundStyle(.blue)
+                        .font(.title3)
+                        .frame(width: 28)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(store.iCloudManager.folderDisplayName ?? "")
+                            .font(.subheadline.weight(.medium))
+                        Text("Echo, CT, Coro and documents will be loaded from this folder")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        store.iCloudManager.loadAllFiles(into: store)
+                    } label: {
+                        Label("Reload", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        activePicker = .iCloudFolder
+                        isPickerPresented = true
+                    } label: {
+                        Label("Change", systemImage: "folder.badge.gear")
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button(role: .destructive) {
+                        store.iCloudManager.clearFolder()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding()
+                .background(.blue.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(.blue.opacity(0.25), lineWidth: 1))
+            } else {
+                Button {
+                    activePicker = .iCloudFolder
+                    isPickerPresented = true
+                } label: {
+                    Label("Connect iCloud Folder", systemImage: "icloud.and.arrow.down")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Text("Pick the folder created by the macOS companion app — all exam files will load automatically.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     // MARK: - Import section

@@ -26,6 +26,7 @@ struct DemoDICOMApp: App {
         WindowGroup {
             RootView()
                 .environment(store)
+                .task { store.iCloudManager.start() }
         }
         .defaultSize(width: 1920, height: 1080)
         .modelContainer(annotationContainer)

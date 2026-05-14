@@ -1,5 +1,5 @@
 {
-  "originHash" : "fb1f5969f133a2b4f91795304b39b2f50cbe7a4764ec60a0faf3b233f22e6064",
+  "originHash" : "3ba8770f315d1d7a3749c8b03333179bd3c9dc528965082887e1ca7d658d85d3",
   "pins" : [
     {
       "identity" : "dicom-decoder",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "7902967736f00841dbbafb65924d53056d5faa27"
+      }
+    },
+    {
+      "identity" : "icloudfoldersync",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ATRIA-Team/iCloudFolderSync.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "9970dfc0f6eb82c5cd984bf74fce579ed4d0eda7"
       }
     }
   ],
