@@ -82,6 +82,10 @@ struct DICOMSyncMessage: Codable {
 
         /// A participant cleared all 3D immersive drawings.
         case clearDrawings
+        /// A participant undid one of their own 3D drawing strokes.
+        case undoDrawingStroke(strokeID: UUID)
+        /// A participant redid one of their own 3D drawing strokes.
+        case redoDrawingStroke(strokeID: UUID)
         /// A participant removed specific 2D annotation strokes from a session.
         case removeAnnotationStrokes(sessionID: UUID, strokeIDs: [UUID])
 

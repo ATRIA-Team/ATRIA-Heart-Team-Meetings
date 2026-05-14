@@ -301,6 +301,20 @@ final class DICOMStore {
         }
     }
 
+    // MARK: - 3D drawing undo / redo
+
+    func undo3DStroke() {
+        if let id = drawing.undo() {
+            sharePlay.send(DICOMSyncMessage(kind: .undoDrawingStroke(strokeID: id)))
+        }
+    }
+
+    func redo3DStroke() {
+        if let id = drawing.redo() {
+            sharePlay.send(DICOMSyncMessage(kind: .redoDrawingStroke(strokeID: id)))
+        }
+    }
+
     // MARK: - Broadcasting helpers
 
     func broadcastDocumentChange(_ examType: ExamType, url: URL?) {

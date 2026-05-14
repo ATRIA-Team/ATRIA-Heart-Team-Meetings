@@ -41,6 +41,18 @@ struct ImmersiveDrawingView: View {
             content.add(stylusRoot)
             stylusManager.rootEntity = stylusRoot
             await stylusManager.handleControllerSetup()
+
+            // Rebuild any strokes that survived a previous stop/start drawing cycle
+            for (id, record) in store.drawing.activeStrokeData {
+                let entity = buildStrokeEntity(from: record)
+                drawingRoot.addChild(entity)
+                activeStrokes[id] = entity
+            }
+            // Rebuild removed strokes so redo still works after reopening the space
+            for (id, record) in store.drawing.removedStrokeData {
+                let entity = buildStrokeEntity(from: record)
+                removedStrokes.append((id: id, entity: entity))
+            }
         }
         // Open the floating brush-controls window when the immersive space starts,
         // unless the caller already provides its own brush controls.
@@ -169,17 +181,29 @@ struct ImmersiveDrawingView: View {
         }
         activeStrokes[strokeID]?.addPoint(point)
 
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        color.getRed(&r, green: &g, blue: &b, alpha: &a)
+        let colorVec = SIMD4<Float>(Float(r), Float(g), Float(b), Float(a))
+
+        // Persist point so strokes survive stop/start drawing
+        store.drawing.recordPoint(strokeID: strokeID, point: point, thickness: thickness, color: colorVec)
+
         // Broadcast to peers only for locally drawn points
         if isLocal {
-            var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-            color.getRed(&r, green: &g, blue: &b, alpha: &a)
-            store.sharePlay.sendDrawPoint(
-                strokeID:  strokeID,
-                point:     point,
-                thickness: thickness,
-                color:     SIMD4<Float>(Float(r), Float(g), Float(b), Float(a))
-            )
+            store.sharePlay.sendDrawPoint(strokeID: strokeID, point: point, thickness: thickness, color: colorVec)
         }
+    }
+
+    private func buildStrokeEntity(from record: DrawingManager.StrokeRecord) -> StrokeEntity {
+        let color = UIColor(
+            red:   CGFloat(record.color.x),
+            green: CGFloat(record.color.y),
+            blue:  CGFloat(record.color.z),
+            alpha: CGFloat(record.color.w)
+        )
+        let stroke = StrokeEntity(thickness: record.thickness, color: color)
+        for pt in record.points { stroke.addPoint(pt) }
+        return stroke
     }
 }
 

@@ -93,7 +93,7 @@ struct RemoteControlsView: View {
             Divider().frame(height: 28)
 
             Button {
-                store.drawing.undo()
+                store.undo3DStroke()
             } label: {
                 Label("Undo", systemImage: "arrow.uturn.backward")
             }
@@ -101,7 +101,7 @@ struct RemoteControlsView: View {
             .disabled(!store.drawing.canUndo)
 
             Button {
-                store.drawing.redo()
+                store.redo3DStroke()
             } label: {
                 Label("Redo", systemImage: "arrow.uturn.forward")
             }

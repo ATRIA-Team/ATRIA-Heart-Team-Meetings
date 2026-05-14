@@ -350,6 +350,12 @@ final class SharePlayCoordinator {
         case .clearDrawings:
             store?.drawing.receiveClearDrawings()
 
+        case .undoDrawingStroke(let strokeID):
+            store?.drawing.remoteUndoStroke(id: strokeID)
+
+        case .redoDrawingStroke(let strokeID):
+            store?.drawing.remoteRedoStroke(id: strokeID)
+
         case .removeAnnotationStrokes(let sessionID, let strokeIDs):
             store?.removeAnnotationStrokes(sessionID: sessionID, ids: Set(strokeIDs))
         }
