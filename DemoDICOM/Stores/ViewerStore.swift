@@ -3,6 +3,7 @@
 //  DemoDICOM
 //
 
+import Foundation
 import CoreGraphics
 import DicomCore
 

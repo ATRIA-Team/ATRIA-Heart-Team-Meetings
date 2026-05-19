@@ -7,12 +7,24 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		781BD4F32FBC6B0A00AE0DEF /* DicomCore in Frameworks */ = {isa = PBXBuildFile; productRef = 781BD4F22FBC6B0A00AE0DEF /* DicomCore */; };
 		7866E4B22FB5CB64002174BF /* ICloudFolderSync in Frameworks */ = {isa = PBXBuildFile; productRef = 7866E4B12FB5CB64002174BF /* ICloudFolderSync */; };
 		A57AFE192F866311009CD5BE /* DicomCore in Frameworks */ = {isa = PBXBuildFile; productRef = A57AFE182F866311009CD5BE /* DicomCore */; };
 		A5BEF1142F73F7B30033EB1B /* RealityKitContent in Frameworks */ = {isa = PBXBuildFile; productRef = A5BEF1132F73F7B30033EB1B /* RealityKitContent */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		781BD4DC2FBC6AE500AE0DEF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A5BEF1062F73F7B30033EB1B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A5BEF10D2F73F7B30033EB1B;
+			remoteInfo = DemoDICOM;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DemoDICOMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		78773F032FADDA17008A1D66 /* DemoDICOMmac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoDICOMmac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoDICOM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5BEF1122F73F7B30033EB1B /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
@@ -29,6 +41,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DemoDICOMTests;
+			sourceTree = "<group>";
+		};
 		78773F042FADDA17008A1D66 /* DemoDICOMmac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = DemoDICOMmac;
@@ -45,6 +62,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		781BD4D52FBC6AE500AE0DEF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				781BD4F32FBC6B0A00AE0DEF /* DicomCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		78773F002FADDA17008A1D66 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -65,12 +90,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		781BD4F12FBC6B0A00AE0DEF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A5BEF1052F73F7B30033EB1B = {
 			isa = PBXGroup;
 			children = (
 				A5BEF1102F73F7B30033EB1B /* DemoDICOM */,
 				A5BEF1112F73F7B30033EB1B /* Packages */,
 				78773F042FADDA17008A1D66 /* DemoDICOMmac */,
+				781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */,
+				781BD4F12FBC6B0A00AE0DEF /* Frameworks */,
 				A5BEF10F2F73F7B30033EB1B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -80,6 +114,7 @@
 			children = (
 				A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */,
 				78773F032FADDA17008A1D66 /* DemoDICOMmac.app */,
+				781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +130,30 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		781BD4D72FBC6AE500AE0DEF /* DemoDICOMTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 781BD4DE2FBC6AE500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMTests" */;
+			buildPhases = (
+				781BD4D42FBC6AE500AE0DEF /* Sources */,
+				781BD4D52FBC6AE500AE0DEF /* Frameworks */,
+				781BD4D62FBC6AE500AE0DEF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				781BD4DD2FBC6AE500AE0DEF /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */,
+			);
+			name = DemoDICOMTests;
+			packageProductDependencies = (
+				781BD4F22FBC6B0A00AE0DEF /* DicomCore */,
+			);
+			productName = DemoDICOMTests;
+			productReference = 781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		78773F022FADDA17008A1D66 /* DemoDICOMmac */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 78773F0B2FADDA18008A1D66 /* Build configuration list for PBXNativeTarget "DemoDICOMmac" */;
@@ -152,6 +211,10 @@
 				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					781BD4D72FBC6AE500AE0DEF = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = A5BEF10D2F73F7B30033EB1B;
+					};
 					78773F022FADDA17008A1D66 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -180,11 +243,19 @@
 			targets = (
 				A5BEF10D2F73F7B30033EB1B /* DemoDICOM */,
 				78773F022FADDA17008A1D66 /* DemoDICOMmac */,
+				781BD4D72FBC6AE500AE0DEF /* DemoDICOMTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		781BD4D62FBC6AE500AE0DEF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		78773F012FADDA17008A1D66 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -202,6 +273,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		781BD4D42FBC6AE500AE0DEF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		78773EFF2FADDA17008A1D66 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -218,7 +296,61 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		781BD4DD2FBC6AE500AE0DEF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A5BEF10D2F73F7B30033EB1B /* DemoDICOM */;
+			targetProxy = 781BD4DC2FBC6AE500AE0DEF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		781BD4DF2FBC6AE500AE0DEF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2263LPF2FA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IgorTarantino.DemoDICOMTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOM.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOM";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Debug;
+		};
+		781BD4E02FBC6AE500AE0DEF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2263LPF2FA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IgorTarantino.DemoDICOMTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 7;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOM.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOM";
+				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
 		78773F0C2FADDA18008A1D66 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -340,7 +472,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 7;
-				XROS_DEPLOYMENT_TARGET = 26.0;
+				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
 		};
@@ -375,7 +507,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 7;
-				XROS_DEPLOYMENT_TARGET = 26.0;
+				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
 		};
@@ -503,6 +635,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		781BD4DE2FBC6AE500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				781BD4DF2FBC6AE500AE0DEF /* Debug */,
+				781BD4E02FBC6AE500AE0DEF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		78773F0B2FADDA18008A1D66 /* Build configuration list for PBXNativeTarget "DemoDICOMmac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -552,6 +693,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		781BD4F22FBC6B0A00AE0DEF /* DicomCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A57AFE172F866311009CD5BE /* XCRemoteSwiftPackageReference "DICOM-Decoder" */;
+			productName = DicomCore;
+		};
 		7866E4B12FB5CB64002174BF /* ICloudFolderSync */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 7866E4B02FB5CB64002174BF /* XCRemoteSwiftPackageReference "iCloudFolderSync" */;

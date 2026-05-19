@@ -5,6 +5,7 @@
 
 import Foundation
 import GroupActivities
+import DicomCore
 
 // MARK: - SessionStore
 
