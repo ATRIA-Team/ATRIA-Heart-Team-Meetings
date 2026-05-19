@@ -7,11 +7,11 @@ import SwiftUI
 import WebKit
 
 struct HTMLViewerWindow: View {
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     var body: some View {
         Group {
-            if let url = store.htmlFileURL {
+            if let url = store.document.htmlFileURL {
                 WebView(url: url)
                     .ignoresSafeArea()
             } else {

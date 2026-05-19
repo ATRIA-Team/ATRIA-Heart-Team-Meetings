@@ -321,6 +321,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = ATRIA;
 				INFOPLIST_KEY_NSAccessoryTrackingUsageDescription = "DemoDICOM uses spatial accessory tracking to let you draw 3D annotations on CT scan slices.";
 				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "DemoDICOM uses hand tracking to support spatial interaction with CT scan slices.";
 				INFOPLIST_KEY_NSWorldSensingUsageDescription = "DemoDICOM uses world sensing to anchor 3D drawings in your physical space.";
@@ -355,6 +356,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = ATRIA;
 				INFOPLIST_KEY_NSAccessoryTrackingUsageDescription = "DemoDICOM uses spatial accessory tracking to let you draw 3D annotations on CT scan slices.";
 				INFOPLIST_KEY_NSHandsTrackingUsageDescription = "DemoDICOM uses hand tracking to support spatial interaction with CT scan slices.";
 				INFOPLIST_KEY_NSWorldSensingUsageDescription = "DemoDICOM uses world sensing to anchor 3D drawings in your physical space.";

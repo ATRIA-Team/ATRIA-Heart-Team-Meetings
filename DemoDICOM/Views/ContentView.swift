@@ -32,22 +32,17 @@ struct WindowInteractionToggle: UIViewRepresentable {
 
 struct ContentView: View {
 
-    /// The store is owned by `DemoDICOMApp` and shared via the environment.
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
-    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     private enum ActivePicker { case folder, html, pdf }
     @State private var activePicker: ActivePicker? = nil
     @State private var isPickerPresented = false
 
     var body: some View {
-        @Bindable var store = store
-
         Group {
-            if store.sliceImages.isEmpty && !store.isLoading {
+            if store.viewer.sliceImages.isEmpty && !store.viewer.isLoading {
                 emptyStateView
             } else {
                 sliceViewerView
@@ -56,12 +51,12 @@ struct ContentView: View {
         .navigationTitle("DICOM Viewer")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                if store.loadedDICOMExamTypes.count > 1 {
+                if store.viewer.loadedDICOMExamTypes.count > 1 {
                     Picker("Exam", selection: Binding(
-                        get: { store.selectedDICOMExamType ?? .ct },
-                        set: { store.selectedDICOMExamType = $0 }
+                        get: { store.viewer.selectedDICOMExamType ?? .ct },
+                        set: { store.viewer.selectedDICOMExamType = $0 }
                     )) {
-                        ForEach(store.loadedDICOMExamTypes, id: \.self) { examType in
+                        ForEach(store.viewer.loadedDICOMExamTypes, id: \.self) { examType in
                             Text(examType.displayName).tag(examType)
                         }
                     }
@@ -95,34 +90,34 @@ struct ContentView: View {
             defer { activePicker = nil }
             guard case .success(let urls) = result, let url = urls.first else {
                 if case .failure(let error) = result {
-                    store.errorMessage = "File picker error: \(error.localizedDescription)"
+                    store.viewer.errorMessage = "File picker error: \(error.localizedDescription)"
                 }
                 return
             }
             switch activePicker {
             case .folder: store.importFolder(url: url)
             case .html:
-                store.htmlFileURL = url
+                store.document.htmlFileURL = url
                 openWindow(id: "htmlViewer")
             case .pdf:
-                store.pdfFileURL = url
+                store.document.pdfFileURL = url
                 openWindow(id: "pdfViewer")
             case nil: break
             }
         }
         .overlay {
-            if store.isLoading { loadingOverlay }
+            if store.viewer.isLoading { loadingOverlay }
         }
         .alert(
             "Error",
             isPresented: Binding(
-                get: { store.errorMessage != nil },
-                set: { if !$0 { store.errorMessage = nil } }
+                get: { store.viewer.errorMessage != nil },
+                set: { if !$0 { store.viewer.errorMessage = nil } }
             )
         ) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(store.errorMessage ?? "")
+            Text(store.viewer.errorMessage ?? "")
         }
         // Disable window interaction while drawing so the stylus button
         // isn't intercepted as a pointer click by visionOS.
@@ -167,35 +162,32 @@ struct ContentView: View {
             mainSliceContent
                 .frame(maxWidth: .infinity)
 
-            if store.isAnnotationPanelVisible {
+            if store.annotation.isAnnotationPanelVisible {
                 annotationPanel
                     .frame(width: 300)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-        .animation(.spring(duration: 0.4), value: store.isAnnotationPanelVisible)
+        .animation(.spring(duration: 0.4), value: store.annotation.isAnnotationPanelVisible)
     }
 
     private var mainSliceContent: some View {
         VStack(spacing: 16) {
             metadataHeader
 
-            if let cgImage = store.currentSliceImage {
-                Image(decorative: cgImage, scale: 1.0)
-                    .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(radius: 4)
-                    .frame(maxHeight: .infinity)
-                    .onLongPressGesture(minimumDuration: 0.5) {
-                        openWindow(id: "annotation", value: UUID())
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        Label("Hold to annotate", systemImage: "pencil.and.outline")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .padding(6)
-                    }
+            if let cgImage = store.viewer.currentSliceImage {
+                DICOMSliceViewer(
+                    image: cgImage,
+                    sliceIndex: Binding(
+                        get: { store.currentSliceIndex },
+                        set: { store.currentSliceIndex = $0 }
+                    ),
+                    sliceCount: store.viewer.sliceCount,
+                    showInlineSlider: false
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(radius: 4)
+                .frame(maxHeight: .infinity)
             }
 
             sliceControls
@@ -230,7 +222,7 @@ struct ContentView: View {
             // One card per live session
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    let sessions = store.liveSessions.values.sorted { $0.sliceIndex < $1.sliceIndex }
+                    let sessions = store.annotation.liveSessions.values.sorted { $0.sliceIndex < $1.sliceIndex }
                     ForEach(sessions) { session in
                         annotationSessionCard(session)
                     }
@@ -277,12 +269,12 @@ struct ContentView: View {
     private var metadataHeader: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                if !store.patientName.isEmpty {
-                    Label(store.patientName, systemImage: "person.fill")
+                if !store.viewer.patientName.isEmpty {
+                    Label(store.viewer.patientName, systemImage: "person.fill")
                         .font(.headline)
                 }
-                if !store.studyDescription.isEmpty || !store.seriesDescription.isEmpty {
-                    Text([store.studyDescription, store.seriesDescription]
+                if !store.viewer.studyDescription.isEmpty || !store.viewer.seriesDescription.isEmpty {
+                    Text([store.viewer.studyDescription, store.viewer.seriesDescription]
                         .filter { !$0.isEmpty }
                         .joined(separator: " · "))
                     .font(.subheadline)
@@ -292,8 +284,8 @@ struct ContentView: View {
 
             Spacer()
 
-            if !store.modality.isEmpty {
-                Text(store.modality)
+            if !store.viewer.modality.isEmpty {
+                Text(store.viewer.modality)
                     .font(.caption)
                     .fontWeight(.bold)
                     .padding(.horizontal, 10)
@@ -305,18 +297,18 @@ struct ContentView: View {
 
     private var sliceControls: some View {
         VStack(spacing: 8) {
-            if store.sliceCount > 1 {
+            if store.viewer.sliceCount > 1 {
                 Slider(
                     value: Binding(
                         get: { Double(store.currentSliceIndex) },
                         set: { store.currentSliceIndex = Int($0) }
                     ),
-                    in: 0...Double(max(store.sliceCount - 1, 1)),
+                    in: 0...Double(max(store.viewer.sliceCount - 1, 1)),
                     step: 1
                 )
             }
 
-            Text("Slice \(store.currentSliceIndex + 1) / \(store.sliceCount)")
+            Text("Slice \(store.currentSliceIndex + 1) / \(store.viewer.sliceCount)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -348,19 +340,10 @@ struct ContentView: View {
     }
 
     /// Toolbar button that opens / closes the mixed-immersion drawing space.
+    /// RootView's onChange(of: store.isDrawingActive) handles the actual ImmersiveSpace.
     private var drawingToggleButton: some View {
         Button {
-            Task {
-                if store.isDrawingActive {
-                    await dismissImmersiveSpace()
-                    store.isDrawingActive = false
-                } else {
-                    let result = await openImmersiveSpace(id: "DrawingSpace")
-                    if case .opened = result {
-                        store.isDrawingActive = true
-                    }
-                }
-            }
+            store.isDrawingActive.toggle()
         } label: {
             Label(
                 store.isDrawingActive ? "Stop Drawing" : "Draw",
@@ -415,5 +398,5 @@ struct AnnotationStrokesView: View {
 
 #Preview(windowStyle: .automatic) {
     ContentView()
-        .environment(DICOMStore())
+        .environment(AppStore())
 }

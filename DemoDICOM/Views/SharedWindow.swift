@@ -10,7 +10,7 @@ import PDFKit
 
 struct SharedWindow: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
 
@@ -21,24 +21,22 @@ struct SharedWindow: View {
     @State private var localStrokeIDs: Set<UUID> = []
 
     var body: some View {
-        @Bindable var store = store
-
         Group {
-            if let sessionID = store.sharedAnnotationSessionID,
-               let session = store.liveSessions[sessionID] {
+            if let sessionID = store.document.sharedAnnotationSessionID,
+               let session = store.annotation.liveSessions[sessionID] {
                 annotationViewer(session: session)
-            } else if let examType = store.sharedWindowExamType {
-                sharedContent(for: examType, store: store)
+            } else if let examType = store.document.sharedWindowExamType {
+                sharedContent(for: examType)
             } else {
                 placeholderView
             }
         }
-        .navigationTitle(sharedWindowTitle(store: store))
+        .navigationTitle(sharedWindowTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(role: .destructive) {
                     dismissWindow(id: "remoteControls")
-                    store.sharePlay.leaveSession()
+                    store.session.leaveSession()
                 } label: {
                     HStack {
                         Image(systemName: "shareplay.slash")
@@ -55,19 +53,19 @@ struct SharedWindow: View {
 
     // MARK: - Navigation title
 
-    private func sharedWindowTitle(store: DICOMStore) -> String {
-        if let sessionID = store.sharedAnnotationSessionID,
-           let session = store.liveSessions[sessionID] {
+    private var sharedWindowTitle: String {
+        if let sessionID = store.document.sharedAnnotationSessionID,
+           let session = store.annotation.liveSessions[sessionID] {
             return "Annotation — Slice \(session.sliceIndex + 1)"
         }
-        return store.sharedWindowExamType?.displayName ?? "Shared Window"
+        return store.document.sharedWindowExamType?.displayName ?? "Shared Window"
     }
 
     // MARK: - Annotation viewer (live drawing canvas)
 
     @ViewBuilder
     private func annotationViewer(session: LiveAnnotationSession) -> some View {
-        let sessionStrokes = store.liveSessions[session.id]?.strokes ?? [:]
+        let sessionStrokes = store.annotation.liveSessions[session.id]?.strokes ?? [:]
 
         Image(decorative: session.frozenImage, scale: 1.0)
             .resizable()
@@ -95,8 +93,7 @@ struct SharedWindow: View {
                             colorR: r, colorG: g, colorB: b,
                             lineWidth: lineWidth
                         )
-                        store.receiveAnnotation2DPoint(msg)
-                        store.sharePlay.sendAnnotation2DPoint(msg)
+                        store.sendAnnotationPoint(msg)
                     }
                 )
             }
@@ -136,7 +133,6 @@ struct SharedWindow: View {
                 if let undoneID = canvasState.undo() {
                     localStrokeIDs.remove(undoneID)
                     store.removeAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
-                    store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
                 }
             } label: {
                 Label("Undo", systemImage: "arrow.uturn.backward")
@@ -153,50 +149,29 @@ struct SharedWindow: View {
     // MARK: - Content router
 
     @ViewBuilder
-    private func sharedContent(for examType: ExamType, store: DICOMStore) -> some View {
+    private func sharedContent(for examType: ExamType) -> some View {
         switch examType {
         case .echo, .ct, .coro:
-            dicomViewer(store: store)
+            dicomViewer
         case .medicalHistory, .vitals, .bloodTests, .other:
-            documentViewer(for: examType, store: store)
+            documentViewer(for: examType)
         }
     }
 
     // MARK: - DICOM viewer
 
     @ViewBuilder
-    private func dicomViewer(store: DICOMStore) -> some View {
-        @Bindable var store = store
-        if let image = store.currentSliceImage {
-            VStack(spacing: 0) {
-                Image(image, scale: 1, label: Text("DICOM Slice"))
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.black)
-                    .onLongPressGesture(minimumDuration: 0.5) {
-                        openWindow(id: "annotation", value: UUID())
-                    }
-                    .overlay(alignment: .bottomTrailing) {
-                        Label("Hold to annotate", systemImage: "pencil.and.outline")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .padding(6)
-                    }
-
-                if store.sliceCount > 1 {
-                    Slider(
-                        value: Binding(
-                            get: { Double(store.currentSliceIndex) },
-                            set: { store.currentSliceIndex = Int($0) }
-                        ),
-                        in: 0...Double(store.sliceCount - 1),
-                        step: 1
-                    )
-                    .padding()
-                    .background(.ultraThinMaterial)
-                }
-            }
+    private var dicomViewer: some View {
+        if let image = store.viewer.currentSliceImage {
+            DICOMSliceViewer(
+                image: image,
+                sliceIndex: Binding(
+                    get: { store.currentSliceIndex },
+                    set: { store.currentSliceIndex = $0 }
+                ),
+                sliceCount: store.viewer.sliceCount
+            )
+            .background(.black)
         } else {
             ContentUnavailableView(
                 "No DICOM Data",
@@ -209,13 +184,12 @@ struct SharedWindow: View {
     // MARK: - Document viewer
 
     @ViewBuilder
-    private func documentViewer(for examType: ExamType, store: DICOMStore) -> some View {
-        @Bindable var store = store
-        if let url = documentURL(for: examType, store: store) {
+    private func documentViewer(for examType: ExamType) -> some View {
+        if let url = store.document.documentURL(for: examType) {
             PDFViewRepresentable(
                 url: url,
-                incomingState: store.sharedPDFState,
-                onStateChange: { store.sharedPDFState = $0 }
+                incomingState: store.document.sharedPDFState,
+                onStateChange: { store.setLocalPDFState($0) }
             )
             .ignoresSafeArea()
         } else {
@@ -224,16 +198,6 @@ struct SharedWindow: View {
                 systemImage: "doc.slash",
                 description: Text("Load \(examType.displayName) from the lobby to view it here.")
             )
-        }
-    }
-
-    private func documentURL(for examType: ExamType, store: DICOMStore) -> URL? {
-        switch examType {
-        case .medicalHistory: return store.medicalHistoryURL
-        case .vitals:         return store.vitalsURL
-        case .bloodTests:     return store.bloodTestURL
-        case .other:          return store.otherFileURL
-        default:              return nil
         }
     }
 
@@ -261,6 +225,6 @@ struct SharedWindow: View {
 #Preview(windowStyle: .automatic) {
     NavigationStack {
         SharedWindow()
-            .environment(DICOMStore())
+            .environment(AppStore())
     }
 }

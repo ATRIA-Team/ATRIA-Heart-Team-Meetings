@@ -9,14 +9,12 @@ import SwiftUI
 
 struct RemoteControlsView: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
     var body: some View {
-        @Bindable var store = store
-
         VStack(alignment: .leading, spacing: 30) {
 
             HStack(spacing: 30) {
@@ -49,7 +47,7 @@ struct RemoteControlsView: View {
     // MARK: - Drawing toolbar
 
     private var drawingToolbar: some View {
-        @Bindable var store = store
+        @Bindable var drawing = store.drawing
         return HStack(spacing: 20) {
 
             Button {
@@ -74,14 +72,14 @@ struct RemoteControlsView: View {
 
             Divider().frame(height: 28)
 
-            ColorPicker("Brush Color", selection: $store.drawing.brushColor, supportsOpacity: false)
+            ColorPicker("Brush Color", selection: $drawing.brushColor, supportsOpacity: false)
                 .labelsHidden()
                 .frame(width: 36, height: 36)
 
             HStack(spacing: 8) {
                 Image(systemName: "pencil.tip")
                     .foregroundStyle(.secondary)
-                Slider(value: $store.drawing.brushSize, in: 0.001...0.02, step: 0.001)
+                Slider(value: $drawing.brushSize, in: 0.001...0.02, step: 0.001)
                     .frame(width: 120)
                 Text(String(format: "%.0f mm", store.drawing.brushSize * 1000))
                     .font(.caption)
@@ -111,8 +109,7 @@ struct RemoteControlsView: View {
             Divider().frame(height: 28)
 
             Button(role: .destructive) {
-                store.drawing.receiveClearDrawings()
-                store.sharePlay.sendClearDrawings()
+                store.clearAllDrawings()
             } label: {
                 Label("Clear All", systemImage: "trash")
             }
@@ -125,12 +122,12 @@ struct RemoteControlsView: View {
 
     @ViewBuilder
     private func remoteButton(_ examType: ExamType, icon: String, text: String) -> some View {
-        let isShared = store.sharedWindowExamType == examType
+        let isShared = store.document.sharedWindowExamType == examType
         RemoteControlButton(
             icon: isShared ? "checkmark.circle.fill" : icon,
             text: text,
             action: { openLocally(examType) },
-            longPressAction: { store.sharedWindowExamType = examType }
+            longPressAction: { store.pushToSharedWindow(examType) }
         )
     }
 
@@ -139,25 +136,25 @@ struct RemoteControlsView: View {
     private func openLocally(_ examType: ExamType) {
         switch examType {
         case .echo, .ct, .coro:
-            store.selectedDICOMExamType = examType
+            store.viewer.selectedDICOMExamType = examType
         case .medicalHistory:
-            if let url = store.medicalHistoryURL { openDocumentLocally(url) }
+            if let url = store.document.medicalHistoryURL { openDocumentLocally(url) }
         case .vitals:
-            if let url = store.vitalsURL { openDocumentLocally(url) }
+            if let url = store.document.vitalsURL { openDocumentLocally(url) }
         case .bloodTests:
-            if let url = store.bloodTestURL { openDocumentLocally(url) }
+            if let url = store.document.bloodTestURL { openDocumentLocally(url) }
         case .other:
-            if let url = store.otherFileURL { openDocumentLocally(url) }
+            if let url = store.document.otherFileURL { openDocumentLocally(url) }
         }
     }
 
     private func openDocumentLocally(_ url: URL) {
-        store.pdfFileURL = url
+        store.document.pdfFileURL = url
         openWindow(id: "pdfViewer")
     }
 }
 
 #Preview(windowStyle: .automatic) {
     RemoteControlsView()
-        .environment(DICOMStore())
+        .environment(AppStore())
 }

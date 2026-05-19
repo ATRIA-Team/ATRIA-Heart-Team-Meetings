@@ -7,11 +7,11 @@ import SwiftUI
 import PDFKit
 
 struct PDFViewerWindow: View {
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     var body: some View {
         Group {
-            if let url = store.pdfFileURL {
+            if let url = store.document.pdfFileURL {
                 PDFViewRepresentable(url: url)
                     .ignoresSafeArea()
             } else {

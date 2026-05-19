@@ -11,7 +11,7 @@ import _GroupActivities_UIKit
 
 struct HomeView2: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     @State private var noMeetings: Bool = true
     @State private var showCaptures: Bool = false
@@ -75,12 +75,12 @@ struct HomeView2: View {
                         showLobby = true
                     }
                     RemoteControlButton(
-                        icon: store.sharePlay.isInSession ? "shareplay" : "video.fill",
-                        text: store.sharePlay.isInSession
-                            ? "\(store.sharePlay.participantCount) in session"
+                        icon: store.session.isInSession ? "shareplay" : "video.fill",
+                        text: store.session.isInSession
+                            ? "\(store.session.participantCount) in session"
                             : "Start meeting"
                     ) {
-                        if store.sharePlay.isInSession {
+                        if store.session.isInSession {
                             // Already in a session — nothing to do from here.
                         } else {
                             showShareSheet = true

@@ -10,7 +10,7 @@ import UIKit
 /// A dedicated 2-D annotation window opened from the slice viewer.
 ///
 /// Each window is tied to a `sessionID` which identifies one `LiveAnnotationSession`
-/// in `DICOMStore.liveSessions`. The session holds a frozen `CGImage` — the DICOM
+/// in `AnnotationStore.liveSessions`. The session holds a frozen `CGImage` — the DICOM
 /// slice as it appeared at the moment the annotation was opened — so scrolling the
 /// main viewer's slider or changing the preset has no effect on this canvas.
 ///
@@ -22,7 +22,7 @@ struct AnnotationView: View {
     /// The session this window belongs to.
     let sessionID: UUID
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
     @Environment(\.modelContext) private var modelContext
 
     @State private var canvasState = PencilCanvasState()
@@ -47,9 +47,9 @@ struct AnnotationView: View {
         }
         .onAppear {
             localStrokeIDs = []
-            if store.liveSessions[sessionID] == nil {
+            if store.annotation.liveSessions[sessionID] == nil {
                 // Brand-new session: freeze current slice and register with the store.
-                if let image = store.currentSliceImage {
+                if let image = store.viewer.currentSliceImage {
                     frozenImage = image
                     store.createAnnotationSession(
                         id: sessionID,
@@ -59,7 +59,7 @@ struct AnnotationView: View {
                 }
             } else {
                 // Joining an existing session from the sidebar.
-                frozenImage = store.liveSessions[sessionID]?.frozenImage
+                frozenImage = store.annotation.liveSessions[sessionID]?.frozenImage
                 store.joinAnnotationSession(id: sessionID)
             }
         }
@@ -71,7 +71,7 @@ struct AnnotationView: View {
     // MARK: - Helpers
 
     private var navigationTitle: String {
-        if let session = store.liveSessions[sessionID] {
+        if let session = store.annotation.liveSessions[sessionID] {
             return "Annotate — Slice \(session.sliceIndex + 1)"
         }
         return "Annotate"
@@ -83,10 +83,10 @@ struct AnnotationView: View {
     private var contentArea: some View {
         // Use the captured frozen image; fall back to the store value briefly
         // on the first render before onAppear has fired.
-        let displayImage = frozenImage ?? store.liveSessions[sessionID]?.frozenImage
+        let displayImage = frozenImage ?? store.annotation.liveSessions[sessionID]?.frozenImage
 
         if let cgImage = displayImage {
-            let sessionStrokes = store.liveSessions[sessionID]?.strokes ?? [:]
+            let sessionStrokes = store.annotation.liveSessions[sessionID]?.strokes ?? [:]
             Image(decorative: cgImage, scale: 1.0)
                 .resizable()
                 .scaledToFit()
@@ -115,8 +115,7 @@ struct AnnotationView: View {
                                 colorR: r, colorG: g, colorB: b,
                                 lineWidth: lineWidth
                             )
-                            store.receiveAnnotation2DPoint(msg)
-                            store.sharePlay.sendAnnotation2DPoint(msg)
+                            store.sendAnnotationPoint(msg)
                         }
                     )
                 }
@@ -144,10 +143,10 @@ struct AnnotationView: View {
     // MARK: - Save
 
     private func saveAnnotation() {
-        guard let cgImage = frozenImage ?? store.liveSessions[sessionID]?.frozenImage,
+        guard let cgImage = frozenImage ?? store.annotation.liveSessions[sessionID]?.frozenImage,
               let base = canvasState.snapshot(backgroundCGImage: cgImage) else { return }
 
-        let sessionStrokes = store.liveSessions[sessionID]?.strokes ?? [:]
+        let sessionStrokes = store.annotation.liveSessions[sessionID]?.strokes ?? [:]
         let remoteStrokes = sessionStrokes.values.filter { !localStrokeIDs.contains($0.id) }
 
         let finalImage: UIImage
@@ -177,11 +176,11 @@ struct AnnotationView: View {
 
         guard let pngData = finalImage.pngData() else { return }
 
-        let sliceIndex = store.liveSessions[sessionID]?.sliceIndex ?? store.currentSliceIndex
+        let sliceIndex = store.annotation.liveSessions[sessionID]?.sliceIndex ?? store.currentSliceIndex
         let annotation = SavedAnnotation(
             sliceIndex:         sliceIndex,
-            patientName:        store.patientName,
-            seriesDescription:  store.seriesDescription,
+            patientName:        store.viewer.patientName,
+            seriesDescription:  store.viewer.seriesDescription,
             imageData:          pngData
         )
         modelContext.insert(annotation)
@@ -230,9 +229,9 @@ struct AnnotationView: View {
         }
 
         ToolbarItemGroup(placement: .topBarTrailing) {
-            let isSharing = store.sharedAnnotationSessionID == sessionID
+            let isSharing = store.document.sharedAnnotationSessionID == sessionID
             Button {
-                store.sharedAnnotationSessionID = isSharing ? nil : sessionID
+                store.setSharedAnnotation(isSharing ? nil : sessionID)
             } label: {
                 HStack {
                     Image(systemName: isSharing ? "checkmark.circle.fill" : "shareplay")
@@ -249,7 +248,6 @@ struct AnnotationView: View {
                 if let undoneID = canvasState.undo() {
                     localStrokeIDs.remove(undoneID)
                     store.removeAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
-                    store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: [undoneID])
                 }
             } label: {
                 Label("Undo", systemImage: "arrow.uturn.backward")
@@ -258,7 +256,6 @@ struct AnnotationView: View {
 
             Button(role: .destructive) {
                 let ids = localStrokeIDs
-                store.sharePlay.sendRemoveAnnotationStrokes(sessionID: sessionID, ids: ids)
                 store.removeAnnotationStrokes(sessionID: sessionID, ids: ids)
                 canvasState.removeStrokes(ids: ids)
                 localStrokeIDs = []
@@ -289,7 +286,7 @@ struct AnnotationView: View {
     }()
 
     // Seed the store with a live annotation session so the view renders its canvas.
-    let store = DICOMStore()
+    let store = AppStore()
     let sessionID = UUID()
     store.createAnnotationSession(id: sessionID, sliceIndex: 4, image: previewImage)
 

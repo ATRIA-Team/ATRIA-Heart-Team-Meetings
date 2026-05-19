@@ -1,5 +1,5 @@
 //
-//  DrawingManager.swift
+//  DrawingStore.swift
 //  DemoDICOM
 //
 
@@ -19,14 +19,14 @@ extension Notification.Name {
     static let redoLastDrawingStroke = Notification.Name("DICOMRedoLastDrawingStroke")
 }
 
-// MARK: - DrawingManager
+// MARK: - DrawingStore
 
 /// Owns brush settings, persists stroke data across immersive space sessions,
 /// and routes drawing messages to `ImmersiveDrawingView` via `NotificationCenter`.
 ///
-/// Owned by `DICOMStore` so all views can access it through the environment.
+/// Uses `NotificationCenter` because `RealityView` cannot observe `@Observable` state directly.
 @Observable
-final class DrawingManager {
+final class DrawingStore {
 
     // MARK: - Stroke record (persisted across immersive space open/close)
 
@@ -93,7 +93,7 @@ final class DrawingManager {
         return id
     }
 
-    // MARK: - Remote undo / redo (called by SharePlayCoordinator)
+    // MARK: - Remote undo / redo (called by SessionStore)
 
     func remoteUndoStroke(id: UUID) {
         moveToRemoved(id: id)
