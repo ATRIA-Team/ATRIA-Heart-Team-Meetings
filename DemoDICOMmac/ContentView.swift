@@ -2,40 +2,34 @@
 //  ContentView.swift
 //  DemoDICOMmac
 //
-//  Created by Igor Tarantino on 08/05/2026.
-//
 
 import SwiftUI
 import AppKit
 
 struct ContentView: View {
-    @StateObject private var model: FolderModel
+    @Environment(FolderStore.self) private var store
     @State private var folderName = "Patient Folder"
-
-    init(previewModel: FolderModel? = nil) {
-        _model = StateObject(wrappedValue: previewModel ?? FolderModel())
-    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 28) {
             VStack(alignment: .leading, spacing: 14) {
-                SidePanel(model: model, folderName: $folderName, onCreateTapped: chooseLocationAndCreate)
-                if model.createdFolderURL != nil {
-                    ShareRow(model: model)
+                SidePanel(folderName: $folderName, onCreateTapped: chooseLocationAndCreate)
+                if store.folderState.folderURL != nil {
+                    ShareRow()
                 }
             }
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 14) {
-                    DropTile(category: .medicalHistory, model: model)
-                    DropTile(category: .vitals,         model: model)
-                    DropTile(category: .bloodTests,     model: model)
-                    DropTile(category: .echo,           model: model)
+                    DropTile(category: .medicalHistory)
+                    DropTile(category: .vitals)
+                    DropTile(category: .bloodTests)
+                    DropTile(category: .echo)
                 }
                 HStack(spacing: 14) {
-                    DropTile(category: .ct,    model: model)
-                    DropTile(category: .coro,  model: model)
-                    DropTile(category: .other, model: model)
+                    DropTile(category: .ct)
+                    DropTile(category: .coro)
+                    DropTile(category: .other)
                 }
                 Spacer(minLength: 0)
             }
@@ -53,21 +47,21 @@ struct ContentView: View {
         panel.message = "Choose where to create the folder"
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let parent = panel.url else { return }
-        model.createFolder(named: folderName, in: parent)
+        store.createFolder(named: folderName, in: parent)
     }
 }
 
 #Preview {
-    let model = FolderModel()
-    model.files[.medicalHistory] = [URL(fileURLWithPath: "/mock/patient_history.pdf")]
-    model.files[.vitals]         = [URL(fileURLWithPath: "/mock/vitals_2026.pdf")]
-    model.files[.bloodTests]     = [URL(fileURLWithPath: "/mock/blood_results.pdf"), URL(fileURLWithPath: "/mock/cbc_panel.pdf")]
-    model.files[.echo]           = [URL(fileURLWithPath: "/mock/echo_study.dcm")]
-    model.files[.ct]             = [URL(fileURLWithPath: "/mock/ct_chest_001.dcm"), URL(fileURLWithPath: "/mock/ct_chest_002.dcm")]
-    model.files[.coro]           = [URL(fileURLWithPath: "/mock/coro_left.dcm")]
-    model.files[.other]          = []
-    model.createdFolderURL       = URL(fileURLWithPath: "/mock/Patient Folder")
-    model.status                 = "Folder created at /mock/Patient Folder"
+    let store = FolderStore()
+    store.files[.medicalHistory] = [URL(fileURLWithPath: "/mock/patient_history.pdf")]
+    store.files[.vitals]         = [URL(fileURLWithPath: "/mock/vitals_2026.pdf")]
+    store.files[.bloodTests]     = [URL(fileURLWithPath: "/mock/blood_results.pdf"), URL(fileURLWithPath: "/mock/cbc_panel.pdf")]
+    store.files[.echo]           = [URL(fileURLWithPath: "/mock/echo_study.dcm")]
+    store.files[.ct]             = [URL(fileURLWithPath: "/mock/ct_chest_001.dcm"), URL(fileURLWithPath: "/mock/ct_chest_002.dcm")]
+    store.files[.coro]           = [URL(fileURLWithPath: "/mock/coro_left.dcm")]
+    store.files[.other]          = []
+    store.folderState            = .ready(URL(fileURLWithPath: "/mock/Patient Folder"))
 
-    return ContentView(previewModel: model)
+    return ContentView()
+        .environment(store)
 }

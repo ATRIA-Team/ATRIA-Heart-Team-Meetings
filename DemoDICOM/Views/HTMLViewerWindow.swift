@@ -2,6 +2,14 @@
 //  HTMLViewerWindow.swift
 //  DemoDICOM
 //
+//  Created by Igor Tarantino on 19/05/2026.
+//
+
+
+//
+//  HTMLViewerWindow.swift
+//  DemoDICOM
+//
 
 import SwiftUI
 import WebKit

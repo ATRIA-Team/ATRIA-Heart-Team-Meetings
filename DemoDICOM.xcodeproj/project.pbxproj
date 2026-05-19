@@ -21,16 +21,31 @@
 			remoteGlobalIDString = A5BEF10D2F73F7B30033EB1B;
 			remoteInfo = DemoDICOM;
 		};
+		781BD6042FBC7C8500AE0DEF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A5BEF1062F73F7B30033EB1B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 78773F022FADDA17008A1D66;
+			remoteInfo = DemoDICOMmac;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DemoDICOMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		781BD6002FBC7C8500AE0DEF /* DemoDICOMMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DemoDICOMMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		78773F032FADDA17008A1D66 /* DemoDICOMmac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoDICOMmac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoDICOM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5BEF1122F73F7B30033EB1B /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		781BD5FB2FBC7C6800AE0DEF /* Exceptions for "DemoDICOMmac" folder in "DemoDICOMmac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				FolderModel.swift,
+			);
+			target = 78773F022FADDA17008A1D66 /* DemoDICOMmac */;
+		};
 		A5BEF11C2F73F7B40033EB1B /* Exceptions for "DemoDICOM" folder in "DemoDICOM" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -46,8 +61,16 @@
 			path = DemoDICOMTests;
 			sourceTree = "<group>";
 		};
+		781BD6012FBC7C8500AE0DEF /* DemoDICOMMacTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DemoDICOMMacTests;
+			sourceTree = "<group>";
+		};
 		78773F042FADDA17008A1D66 /* DemoDICOMmac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				781BD5FB2FBC7C6800AE0DEF /* Exceptions for "DemoDICOMmac" folder in "DemoDICOMmac" target */,
+			);
 			path = DemoDICOMmac;
 			sourceTree = "<group>";
 		};
@@ -67,6 +90,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				781BD4F32FBC6B0A00AE0DEF /* DicomCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		781BD5FD2FBC7C8500AE0DEF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,6 +134,7 @@
 				A5BEF1112F73F7B30033EB1B /* Packages */,
 				78773F042FADDA17008A1D66 /* DemoDICOMmac */,
 				781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */,
+				781BD6012FBC7C8500AE0DEF /* DemoDICOMMacTests */,
 				781BD4F12FBC6B0A00AE0DEF /* Frameworks */,
 				A5BEF10F2F73F7B30033EB1B /* Products */,
 			);
@@ -115,6 +146,7 @@
 				A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */,
 				78773F032FADDA17008A1D66 /* DemoDICOMmac.app */,
 				781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */,
+				781BD6002FBC7C8500AE0DEF /* DemoDICOMMacTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -152,6 +184,29 @@
 			);
 			productName = DemoDICOMTests;
 			productReference = 781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		781BD5FF2FBC7C8500AE0DEF /* DemoDICOMMacTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 781BD6062FBC7C8500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMMacTests" */;
+			buildPhases = (
+				781BD5FC2FBC7C8500AE0DEF /* Sources */,
+				781BD5FD2FBC7C8500AE0DEF /* Frameworks */,
+				781BD5FE2FBC7C8500AE0DEF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				781BD6052FBC7C8500AE0DEF /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				781BD6012FBC7C8500AE0DEF /* DemoDICOMMacTests */,
+			);
+			name = DemoDICOMMacTests;
+			packageProductDependencies = (
+			);
+			productName = DemoDICOMMacTests;
+			productReference = 781BD6002FBC7C8500AE0DEF /* DemoDICOMMacTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		78773F022FADDA17008A1D66 /* DemoDICOMmac */ = {
@@ -215,6 +270,10 @@
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = A5BEF10D2F73F7B30033EB1B;
 					};
+					781BD5FF2FBC7C8500AE0DEF = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = 78773F022FADDA17008A1D66;
+					};
 					78773F022FADDA17008A1D66 = {
 						CreatedOnToolsVersion = 26.3;
 					};
@@ -244,12 +303,20 @@
 				A5BEF10D2F73F7B30033EB1B /* DemoDICOM */,
 				78773F022FADDA17008A1D66 /* DemoDICOMmac */,
 				781BD4D72FBC6AE500AE0DEF /* DemoDICOMTests */,
+				781BD5FF2FBC7C8500AE0DEF /* DemoDICOMMacTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		781BD4D62FBC6AE500AE0DEF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		781BD5FE2FBC7C8500AE0DEF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -280,6 +347,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		781BD5FC2FBC7C8500AE0DEF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		78773EFF2FADDA17008A1D66 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -301,6 +375,11 @@
 			isa = PBXTargetDependency;
 			target = A5BEF10D2F73F7B30033EB1B /* DemoDICOM */;
 			targetProxy = 781BD4DC2FBC6AE500AE0DEF /* PBXContainerItemProxy */;
+		};
+		781BD6052FBC7C8500AE0DEF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 78773F022FADDA17008A1D66 /* DemoDICOMmac */;
+			targetProxy = 781BD6042FBC7C8500AE0DEF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -348,6 +427,50 @@
 				TARGETED_DEVICE_FAMILY = 7;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOM.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOM";
 				XROS_DEPLOYMENT_TARGET = 26.2;
+			};
+			name = Release;
+		};
+		781BD6072FBC7C8500AE0DEF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2263LPF2FA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IgorTarantino.DemoDICOMMacTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOMmac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOMmac";
+			};
+			name = Debug;
+		};
+		781BD6082FBC7C8500AE0DEF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2263LPF2FA;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = IgorTarantino.DemoDICOMMacTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOMmac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOMmac";
 			};
 			name = Release;
 		};
@@ -640,6 +763,15 @@
 			buildConfigurations = (
 				781BD4DF2FBC6AE500AE0DEF /* Debug */,
 				781BD4E02FBC6AE500AE0DEF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		781BD6062FBC7C8500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMMacTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				781BD6072FBC7C8500AE0DEF /* Debug */,
+				781BD6082FBC7C8500AE0DEF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

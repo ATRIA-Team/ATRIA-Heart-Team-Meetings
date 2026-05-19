@@ -272,7 +272,7 @@ struct LobbyView: View {
 
             if store.iCloud.hasFolder {
                 HStack(spacing: 12) {
-                    Image(systemName: "folder.fill.badge.checkmark")
+                    Image(systemName: "folder.fill.badge.person.crop")
                         .foregroundStyle(.blue)
                         .font(.title3)
                         .frame(width: 28)

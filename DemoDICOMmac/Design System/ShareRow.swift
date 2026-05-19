@@ -7,7 +7,7 @@ import SwiftUI
 import AppKit
 
 struct ShareRow: View {
-    @ObservedObject var model: FolderModel
+    @Environment(FolderStore.self) private var store
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -16,16 +16,19 @@ struct ShareRow: View {
                 .padding(.leading, 2)
 
             HStack(spacing: 8) {
-                NativeShareButton(items: [model.createdFolderURL as Any]) {
+                NativeShareButton(items: [store.folderState.folderURL as Any]) {
                     ActionTileContent(icon: "square.and.arrow.up", text: "Share")
                 }
 
                 ActionTile(icon: "folder", text: "Show in Finder") {
-                    if let url = model.createdFolderURL {
+                    if let url = store.folderState.folderURL {
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                 }
 
+                ActionTile(icon: "icloud.and.arrow.up", text: "Upload to iCloud") {
+                    store.moveToICloud()
+                }
             }
         }
     }

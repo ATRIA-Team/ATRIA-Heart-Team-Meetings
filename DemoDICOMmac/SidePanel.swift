@@ -6,7 +6,7 @@
 import SwiftUI
 
 struct SidePanel: View {
-    @ObservedObject var model: FolderModel
+    @Environment(FolderStore.self) private var store
     @Binding var folderName: String
     var onCreateTapped: () -> Void
 
@@ -25,7 +25,6 @@ struct SidePanel: View {
 
                 Divider().padding(.horizontal, 20).padding(.bottom, 20)
 
-
                 VStack(alignment: .leading, spacing: 6) {
                     Text("FOLDER NAME")
                         .font(.system(size: 10, weight: .semibold))
@@ -39,11 +38,11 @@ struct SidePanel: View {
                 Spacer()
 
                 VStack(spacing: 4) {
-                    Text("\(model.totalCount) file\(model.totalCount == 1 ? "" : "s") added")
+                    Text("\(store.totalCount) file\(store.totalCount == 1 ? "" : "s") added")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    if let status = model.status {
-                        Text(status)
+                    if let message = store.folderState.statusMessage {
+                        Text(message)
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -59,7 +58,7 @@ struct SidePanel: View {
                     Label("Create Folder", systemImage: "folder.badge.plus")
                         .frame(maxWidth: .infinity)
                 }
-                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || model.totalCount == 0)
+                .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || store.totalCount == 0)
                 .keyboardShortcut(.defaultAction)
                 .controlSize(.large)
                 .padding(.horizontal, 20)
@@ -69,5 +68,4 @@ struct SidePanel: View {
         .frame(width: 290, height: 460)
         .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
     }
-
 }
