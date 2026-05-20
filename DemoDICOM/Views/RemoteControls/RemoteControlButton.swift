@@ -81,5 +81,5 @@ struct RemoteControlButton: View {
 
 #Preview(windowStyle: .automatic) {
     RemoteControlsView()
-        .environment(DICOMStore())
+        .environment(AppStore())
 }

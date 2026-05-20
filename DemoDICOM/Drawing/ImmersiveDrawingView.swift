@@ -16,7 +16,7 @@ import ARKit
 /// - Receives peer stroke points and clears via `NotificationCenter`
 struct ImmersiveDrawingView: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Environment(\.openWindow) private var openWindow
     @Environment(\.dismissWindow) private var dismissWindow
@@ -190,11 +190,11 @@ struct ImmersiveDrawingView: View {
 
         // Broadcast to peers only for locally drawn points
         if isLocal {
-            store.sharePlay.sendDrawPoint(strokeID: strokeID, point: point, thickness: thickness, color: colorVec)
+            store.session.sendDrawPoint(strokeID: strokeID, point: point, thickness: thickness, color: colorVec)
         }
     }
 
-    private func buildStrokeEntity(from record: DrawingManager.StrokeRecord) -> StrokeEntity {
+    private func buildStrokeEntity(from record: DrawingStore.StrokeRecord) -> StrokeEntity {
         let color = UIColor(
             red:   CGFloat(record.color.x),
             green: CGFloat(record.color.y),
@@ -213,12 +213,12 @@ struct ImmersiveDrawingView: View {
 /// Declared as a separate WindowGroup so visionOS makes it draggable.
 struct DrawingToolsPanel: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
-        @Bindable var store = store
+        @Bindable var drawing = store.drawing
         VStack(spacing: 14) {
             HStack {
                 Text("Drawing Tools")
@@ -241,13 +241,13 @@ struct DrawingToolsPanel: View {
             HStack {
                 Text("Color")
                 Spacer()
-                ColorPicker("Brush Color", selection: $store.drawing.brushColor, supportsOpacity: false)
+                ColorPicker("Brush Color", selection: $drawing.brushColor, supportsOpacity: false)
                     .labelsHidden()
             }
 
             HStack {
                 Text("Size")
-                Slider(value: $store.drawing.brushSize, in: 0.001...0.02, step: 0.001)
+                Slider(value: $drawing.brushSize, in: 0.001...0.02, step: 0.001)
                 Text(String(format: "%.0f mm", store.drawing.brushSize * 1000))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -256,8 +256,7 @@ struct DrawingToolsPanel: View {
             }
 
             Button(role: .destructive) {
-                store.drawing.receiveClearDrawings()
-                store.sharePlay.sendClearDrawings()
+                store.clearAllDrawings()
             } label: {
                 Label("Clear All", systemImage: "trash")
             }

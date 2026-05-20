@@ -14,7 +14,7 @@ import UniformTypeIdentifiers
 /// `true` and `RootView` automatically transitions everyone to the viewer.
 struct LobbyView: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     private enum ActivePicker {
         case echo, ct, coro, medicalHistory, vitals, bloodTests, other, iCloudFolder
@@ -29,8 +29,6 @@ struct LobbyView: View {
     @State private var isPickerPresented = false
 
     var body: some View {
-        @Bindable var store = store
-
         ScrollView {
             VStack(spacing: 28) {
                 headerSection
@@ -46,7 +44,7 @@ struct LobbyView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Label(
-                    "\(store.sharePlay.participantCount) connected",
+                    "\(store.session.participantCount) connected",
                     systemImage: "shareplay"
                 )
                 .font(.subheadline)
@@ -64,29 +62,29 @@ struct LobbyView: View {
             case .echo:           store.importFolder(url: url, examType: .echo)
             case .ct:             store.importFolder(url: url, examType: .ct)
             case .coro:           store.importFolder(url: url, examType: .coro)
-            case .medicalHistory: store.medicalHistoryURL = url; store.broadcastDocumentChange(.medicalHistory, url: url)
-            case .vitals:         store.vitalsURL = url;         store.broadcastDocumentChange(.vitals,         url: url)
-            case .bloodTests:     store.bloodTestURL = url;      store.broadcastDocumentChange(.bloodTests,     url: url)
-            case .other:          store.otherFileURL = url;      store.broadcastDocumentChange(.other,          url: url)
+            case .medicalHistory: store.addMedicalHistory(url)
+            case .vitals:         store.addVitals(url)
+            case .bloodTests:     store.addBloodTests(url)
+            case .other:          store.addOther(url)
             case .iCloudFolder:
-                try? store.iCloudManager.selectFolder(url)
-                store.iCloudManager.loadAllFiles(into: store)
+                try? store.iCloud.selectFolder(url)
+                store.iCloud.loadAllFiles(into: store)
             case nil:             break
             }
         }
         .overlay {
-            if store.isLoading { loadingOverlay }
+            if store.viewer.isLoading { loadingOverlay }
         }
         .alert(
             "Error",
             isPresented: Binding(
-                get: { store.errorMessage != nil },
-                set: { if !$0 { store.errorMessage = nil } }
+                get: { store.viewer.errorMessage != nil },
+                set: { if !$0 { store.viewer.errorMessage = nil } }
             )
         ) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(store.errorMessage ?? "")
+            Text(store.viewer.errorMessage ?? "")
         }
     }
 
@@ -113,7 +111,7 @@ struct LobbyView: View {
     // MARK: - Participants
 
     private var sortedParticipants: [ParticipantReadyState] {
-        store.sharePlay.participantStates.values
+        store.session.participantStates.values
             .sorted { $0.isLocal && !$1.isLocal }
     }
 
@@ -147,7 +145,7 @@ struct LobbyView: View {
     // MARK: - Mismatch warning
 
     private var hasMismatchWarning: Bool {
-        let readyCounts = store.sharePlay.participantStates.values
+        let readyCounts = store.session.participantStates.values
             .filter { $0.isReady }
             .map { $0.sliceCount }
         guard readyCounts.count >= 2 else { return false }
@@ -189,31 +187,38 @@ struct LobbyView: View {
 
     private var uploadedFileEntries: [FileEntry] {
         var entries: [FileEntry] = []
+
         let dicomTypes: [(ExamType, String, String)] = [
             (.echo,  "waveform.path.ecg.text.clipboard.fill", "Echo"),
             (.ct,    "waveform.path.ecg.rectangle.fill",      "CT Scan"),
             (.coro,  "heart.fill",                            "Coronary"),
         ]
         for (examType, icon, label) in dicomTypes {
-            if let bundle = store.dicomExams[examType], bundle.sliceCount > 0 {
+            for bundle in store.viewer.dicomExams[examType] ?? [] where bundle.sliceCount > 0 {
+                let bundleID = bundle.id
+                let detail = bundle.seriesDescription.isEmpty
+                    ? "\(bundle.sliceCount) slices"
+                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
                 entries.append(FileEntry(icon: icon, tint: .blue, label: label,
-                                         detail: "\(bundle.sliceCount) slices",
-                                         removeAction: { [store] in store.removeExam(examType) }))
+                                         detail: detail,
+                                         removeAction: { [store] in store.removeBundle(id: bundleID, examType: examType) }))
             }
         }
-        let docTypes: [(URL?, String, String, Color, () -> Void)] = [
-            (store.medicalHistoryURL, "list.bullet.clipboard.fill", "Medical History", .green,  { store.medicalHistoryURL = nil }),
-            (store.vitalsURL,         "stethoscope",                "Vitals",          .orange, { store.vitalsURL         = nil }),
-            (store.bloodTestURL,      "drop.fill",                  "Blood Tests",     .red,    { store.bloodTestURL      = nil }),
-            (store.otherFileURL,      "heart.text.clipboard.fill",  "Other",           .purple, { store.otherFileURL      = nil }),
+
+        let docTypes: [([URL], String, String, Color, (URL) -> Void)] = [
+            (store.document.medicalHistoryURLs, "list.bullet.clipboard.fill", "Medical History", .green,  { store.removeMedicalHistory($0) }),
+            (store.document.vitalsURLs,         "stethoscope",                "Vitals",          .orange, { store.removeVitals($0) }),
+            (store.document.bloodTestURLs,      "drop.fill",                  "Blood Tests",     .red,    { store.removeBloodTests($0) }),
+            (store.document.otherFileURLs,      "heart.text.clipboard.fill",  "Other",           .purple, { store.removeOther($0) }),
         ]
-        for (url, icon, label, tint, remove) in docTypes {
-            if let url {
+        for (urls, icon, label, tint, remove) in docTypes {
+            for url in urls {
                 entries.append(FileEntry(icon: icon, tint: tint, label: label,
                                          detail: url.lastPathComponent,
-                                         removeAction: remove))
+                                         removeAction: { remove(url) }))
             }
         }
+
         return entries
     }
 
@@ -272,15 +277,15 @@ struct LobbyView: View {
             Label("iCloud Folder", systemImage: "icloud.fill")
                 .font(.headline)
 
-            if store.iCloudManager.hasFolder {
+            if store.iCloud.hasFolder {
                 HStack(spacing: 12) {
-                    Image(systemName: "folder.fill.badge.checkmark")
+                    Image(systemName: "folder.fill.badge.person.crop")
                         .foregroundStyle(.blue)
                         .font(.title3)
                         .frame(width: 28)
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(store.iCloudManager.folderDisplayName ?? "")
+                        Text(store.iCloud.folderDisplayName ?? "")
                             .font(.subheadline.weight(.medium))
                         Text("Echo, CT, Coro and documents will be loaded from this folder")
                             .font(.caption)
@@ -290,7 +295,7 @@ struct LobbyView: View {
                     Spacer()
 
                     Button {
-                        store.iCloudManager.loadAllFiles(into: store)
+                        store.iCloud.loadAllFiles(into: store)
                     } label: {
                         Label("Reload", systemImage: "arrow.clockwise")
                     }
@@ -305,7 +310,7 @@ struct LobbyView: View {
                     .buttonStyle(.bordered)
 
                     Button(role: .destructive) {
-                        store.iCloudManager.clearFolder()
+                        store.iCloud.clearFolder()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
@@ -336,11 +341,11 @@ struct LobbyView: View {
     // MARK: - Import section
 
     private var localState: ParticipantReadyState? {
-        store.sharePlay.participantStates.values.first { $0.isLocal }
+        store.session.participantStates.values.first { $0.isLocal }
     }
 
     private var waitingCount: Int {
-        store.sharePlay.participantStates.values.filter { !$0.isReady }.count
+        store.session.participantStates.values.filter { !$0.isReady }.count
     }
 
     @ViewBuilder
@@ -366,9 +371,9 @@ struct LobbyView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            let canStart = store.sharePlay.allParticipantsReady || DebugFlags.bypassSharePlay
+            let canStart = store.session.allParticipantsReady || DebugFlags.bypassSharePlay
             Button {
-                store.sharePlay.startSession()
+                store.session.startSession()
             } label: {
                 Label("Start Session", systemImage: "play.circle.fill")
                     .font(.headline)
@@ -459,5 +464,5 @@ private struct ParticipantRow: View {
 
 #Preview {
     LobbyView()
-        .environment(DICOMStore())
+        .environment(AppStore())
 }

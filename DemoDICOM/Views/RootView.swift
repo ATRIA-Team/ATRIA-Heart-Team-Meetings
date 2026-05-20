@@ -6,13 +6,10 @@
 import SwiftUI
 import GroupActivities
 
-/// Routes between `LobbyView` and `ContentView` based on SharePlay session state.
-///
-/// The `DICOMStore` is owned by `DemoDICOMApp` and injected via `.environment`.
-/// This view listens for incoming `GroupSession`s for the lifetime of the window.
+/// Routes between `LobbyView` and `SharedWindow` based on SharePlay session state.
 struct RootView: View {
 
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
@@ -20,9 +17,8 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if store.sharePlay.isInSession || DebugFlags.bypassSharePlay {
-                if store.sharePlay.sessionHasStarted {
-                    // Main window becomes the shared window once session is live.
+            if store.session.isInSession || DebugFlags.bypassSharePlay {
+                if store.session.sessionHasStarted {
                     NavigationStack { SharedWindow() }
                 } else {
                     NavigationStack { LobbyView() }
@@ -32,20 +28,14 @@ struct RootView: View {
             }
         }
         .task {
-            // Listen for incoming GroupSessions for the lifetime of this scene.
             for await session in DICOMViewerActivity.sessions() {
-                await store.sharePlay.handleIncomingSession(session)
+                await store.session.handleIncomingSession(session)
             }
         }
-        .onChange(of: store.sharePlay.sessionHasStarted) { _, started in
-            if started {
-                // Main window transitions to SharedWindow in-place; only the
-                // remote-controls companion panel needs to be opened separately.
-                openWindow(id: "remoteControls")
-            }
+        .onChange(of: store.session.sessionHasStarted) { _, started in
+            if started { openWindow(id: "remoteControls") }
         }
         .onChange(of: store.isDrawingActive) { _, newValue in
-            // Ensure the immersive drawing space is synced for all participants.
             Task {
                 if newValue {
                     store.suppressDrawingToolsPanel = true
@@ -57,4 +47,3 @@ struct RootView: View {
         }
     }
 }
-

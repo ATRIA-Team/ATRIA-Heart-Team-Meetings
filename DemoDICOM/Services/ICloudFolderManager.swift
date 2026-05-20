@@ -24,7 +24,7 @@ final class ICloudFolderManager {
     var hasFolder: Bool { folderDisplayName != nil }
 
     // Tracks whether we hold an open security-scoped access on the root folder.
-    // Kept open so that Task.detached imports inside DICOMStore can reach subfolders.
+    // Kept open so that Task.detached imports inside AppStore can reach subfolders.
     private var rootScopeAccessed = false
 
     // MARK: - Lifecycle
@@ -59,10 +59,10 @@ final class ICloudFolderManager {
     ///
     /// DICOM subfolders (Echo / CT / Coro) → `store.importFolder(url:examType:)`
     /// Document subfolders → the corresponding URL property on the store
-    func loadAllFiles(into store: DICOMStore) {
+    func loadAllFiles(into store: AppStore) {
         guard let rootURL = controller.folderURL else { return }
 
-        // Ensure root is accessible for the detached import tasks in DICOMStore.
+        // Ensure root is accessible for the detached import tasks in AppStore.
         if !rootScopeAccessed {
             rootScopeAccessed = rootURL.startAccessingSecurityScopedResource()
         }
@@ -82,15 +82,15 @@ final class ICloudFolderManager {
             }
         }
 
-        let docMappings: [(String, (URL?) -> Void)] = [
-            ("Medical History", { store.medicalHistoryURL = $0 }),
-            ("Vitals",          { store.vitalsURL         = $0 }),
-            ("Blood Tests",     { store.bloodTestURL      = $0 }),
-            ("Other",           { store.otherFileURL      = $0 })
+        let docMappings: [(String, (URL) -> Void)] = [
+            ("Medical History", { store.addMedicalHistory($0) }),
+            ("Vitals",          { store.addVitals($0) }),
+            ("Blood Tests",     { store.addBloodTests($0) }),
+            ("Other",           { store.addOther($0) })
         ]
-        for (subfolderName, setter) in docMappings {
+        for (subfolderName, add) in docMappings {
             let subfolderURL = rootURL.appendingPathComponent(subfolderName)
-            setter(firstSupportedFile(in: subfolderURL, using: fm))
+            if let url = firstSupportedFile(in: subfolderURL, using: fm) { add(url) }
         }
     }
 

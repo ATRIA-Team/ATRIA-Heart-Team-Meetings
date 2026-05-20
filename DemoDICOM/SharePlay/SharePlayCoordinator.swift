@@ -14,13 +14,9 @@ struct ParticipantReadyState: Identifiable {
     let id: UUID
     let isLocal: Bool
 
-    /// Which exam types this participant has finished loading.
     var loadedExams: Set<ExamType> = []
-
-    /// Lightweight metadata per loaded exam, used by the lobby UI.
     var examMetadata: [ExamType: ExamMetadata] = [:]
 
-    /// Derived: participant is ready when at least one exam file of any type is loaded.
     var isReady: Bool { !loadedExams.isEmpty }
 
     // MARK: Convenience accessors for LobbyView
@@ -47,54 +43,32 @@ struct ParticipantReadyState: Identifiable {
 
 // MARK: - SharePlayCoordinator
 
-/// Manages the full SharePlay session lifecycle:
-///
-/// **Lobby phase** — tracks per-participant, per-exam-type readiness via `participantStates`.
-/// Once every participant has loaded every required exam type, `sessionHasStarted` latches
-/// to `true` and `RootView` transitions to the viewer. Late-joining participants do not push
-/// active viewers back to the lobby.
-///
-/// **Viewer phase** — syncs `currentSliceIndex` and `selectedPreset` in real time
-/// via `send(_:)`, guarded by `isApplyingRemoteChange` to prevent echo loops.
+/// Pure transport layer: manages the GroupActivities session lifecycle, sends messages,
+/// and forwards received messages to `SessionStore` for routing to domain stores.
+/// Has no knowledge of business logic — all routing decisions live in `SessionStore`.
 @Observable
-final class SharePlayCoordinator {
+final class SharePlayCoordinator: SharePlayTransport {
 
     // MARK: - Observable state
 
-    /// True while this device is inside an active GroupSession.
     private(set) var isInSession: Bool = false
-
-    /// Per-participant lobby state, keyed by `Participant.ID` (UUID).
     private(set) var participantStates: [UUID: ParticipantReadyState] = [:]
-
-    /// True once every participant has reported ready. Stays true for the
-    /// remainder of the session so late joiners don't interrupt the viewer.
     private(set) var sessionHasStarted: Bool = false
 
-    /// True when all known participants have loaded all required exam types.
     var allParticipantsReady: Bool {
         guard !participantStates.isEmpty else { return false }
         return participantStates.values.allSatisfy { $0.isReady }
     }
 
-    /// Number of participants currently in the session (including this device).
     var participantCount: Int { participantStates.count }
-
-    /// True when the device is in an active FaceTime call and SharePlay is
-    /// available. When false, the system sheet will offer to start a call first.
     private(set) var isEligibleForGroupSession: Bool = false
-
-    /// Set when activation fails (e.g. SharePlay disabled in Settings).
-    /// Views should present this as an alert and then clear it.
     var activationError: String?
 
     // MARK: - Internal
 
-    /// Back-reference to the store; set immediately after `DICOMStore.init()`.
-    weak var store: DICOMStore?
+    /// Set by `SessionStore` immediately after it is created.
+    weak var sessionStore: SessionStore?
 
-    /// Raised while applying a received slice/preset message so that
-    /// `DICOMStore`'s `didSet` observers don't re-broadcast the change.
     private(set) var isApplyingRemoteChange: Bool = false
 
     private var localParticipantID: UUID?
@@ -117,7 +91,6 @@ final class SharePlayCoordinator {
 
     // MARK: - Activation
 
-    /// Presents the system SharePlay / FaceTime invitation sheet.
     @MainActor
     func activate() async {
         let activity = DICOMViewerActivity()
@@ -135,7 +108,6 @@ final class SharePlayCoordinator {
 
     // MARK: - Session entry
 
-    /// Called by `RootView` each time a `GroupSession` arrives.
     @MainActor
     func handleIncomingSession(_ session: GroupSession<DICOMViewerActivity>) async {
         sessionTasks.forEach { $0.cancel() }
@@ -162,12 +134,9 @@ final class SharePlayCoordinator {
 
         isInSession = true
         sessionHasStarted = false
-
         participantStates = [localID: ParticipantReadyState(id: localID, isLocal: true)]
 
-        // If the store already has data loaded before SharePlay started,
-        // immediately broadcast readiness for each exam type already loaded.
-        store?.broadcastAllLoadedExams()
+        sessionStore?.notifyNewPeersArrived()
 
         sessionTasks.append(Task { @MainActor [weak self] in
             guard let self else { return }
@@ -179,10 +148,7 @@ final class SharePlayCoordinator {
         sessionTasks.append(Task { @MainActor [weak self] in
             guard let self else { return }
             for await state in session.$state.values {
-                if case .invalidated = state {
-                    self.tearDown()
-                    break
-                }
+                if case .invalidated = state { self.tearDown(); break }
             }
         })
 
@@ -196,21 +162,20 @@ final class SharePlayCoordinator {
         sessionTasks.append(Task { @MainActor [weak self] in
             guard let self else { return }
             for await (message, _) in unreliableMessenger.messages(of: DrawPointMessage.self) {
-                self.store?.drawing.receiveRemotePoint(message)
+                self.sessionStore?.applyRemoteDrawPoint(message)
             }
         })
 
         sessionTasks.append(Task { @MainActor [weak self] in
             guard let self else { return }
             for await (message, _) in unreliableMessenger.messages(of: Annotation2DPointMessage.self) {
-                self.store?.receiveAnnotation2DPoint(message)
+                self.sessionStore?.applyRemoteAnnotationPoint(message)
             }
         })
     }
 
     // MARK: - Lobby broadcasting
 
-    /// Marks one exam type as ready for the local participant and notifies all peers.
     @MainActor
     func broadcastExamReady(type examType: ExamType, metadata: ExamMetadata) {
         guard isInSession, let localID = localParticipantID else { return }
@@ -221,8 +186,6 @@ final class SharePlayCoordinator {
         send(DICOMSyncMessage(kind: .examReady(type: examType, metadata: metadata)))
     }
 
-    /// Called when the local user taps the Start Session button.
-    /// Sets the session as started locally and notifies all peers.
     @MainActor
     func startSession() {
         guard (isInSession || DebugFlags.bypassSharePlay),
@@ -231,7 +194,6 @@ final class SharePlayCoordinator {
         send(DICOMSyncMessage(kind: .sessionStarted))
     }
 
-    /// Marks one exam type as not-ready for the local participant and notifies all peers.
     @MainActor
     func broadcastExamNotReady(type examType: ExamType) {
         guard isInSession, let localID = localParticipantID else { return }
@@ -242,52 +204,38 @@ final class SharePlayCoordinator {
         send(DICOMSyncMessage(kind: .examNotReady(type: examType)))
     }
 
-    // MARK: - Viewer state sending
+    // MARK: - Sending
 
-    /// Broadcasts a slice/preset message to all other participants.
     func send(_ message: DICOMSyncMessage) {
         guard isInSession, !isApplyingRemoteChange, let messenger else { return }
-        Task {
-            try? await messenger.send(message)
-        }
+        Task { try? await messenger.send(message) }
     }
 
     func sendDrawPoint(strokeID: UUID, point: SIMD3<Float>, thickness: Float, color: SIMD4<Float>) {
         guard isInSession, let unreliableMessenger else { return }
         let message = DrawPointMessage(strokeID: strokeID, point: point, thickness: thickness, color: color)
-        Task {
-            try? await unreliableMessenger.send(message)
-        }
+        Task { try? await unreliableMessenger.send(message) }
     }
 
     func sendAnnotation2DPoint(_ message: Annotation2DPointMessage) {
         guard isInSession, let unreliableMessenger else { return }
-        Task {
-            try? await unreliableMessenger.send(message)
-        }
+        Task { try? await unreliableMessenger.send(message) }
     }
 
     func sendClearDrawings() {
         guard isInSession, let messenger else { return }
-        Task {
-            try? await messenger.send(DICOMSyncMessage(kind: .clearDrawings))
-        }
+        Task { try? await messenger.send(DICOMSyncMessage(kind: .clearDrawings)) }
     }
 
     func sendRemoveAnnotationStrokes(sessionID: UUID, ids: Set<UUID>) {
         guard isInSession, !ids.isEmpty, let messenger else { return }
-        Task {
-            try? await messenger.send(DICOMSyncMessage(kind: .removeAnnotationStrokes(sessionID: sessionID, strokeIDs: Array(ids))))
-        }
+        Task { try? await messenger.send(DICOMSyncMessage(kind: .removeAnnotationStrokes(sessionID: sessionID, strokeIDs: Array(ids)))) }
     }
 
     // MARK: - Private
 
     @MainActor
-    private func reconcileParticipants(
-        _ participants: Set<Participant>,
-        localParticipant: Participant
-    ) {
+    private func reconcileParticipants(_ participants: Set<Participant>, localParticipant: Participant) {
         let incomingIDs = Set(participants.map { $0.id })
         let existingIDs = Set(participantStates.keys)
 
@@ -303,23 +251,9 @@ final class SharePlayCoordinator {
             )
         }
 
-        // Re-broadcast every exam type already loaded so late joiners learn our state.
         let newRemoteArrivals = newArrivals.subtracting([localParticipant.id])
         if !newRemoteArrivals.isEmpty {
-            store?.broadcastAllLoadedExams()
-
-            // Re-broadcast every annotation session this device currently has open.
-            if let store {
-                for (sessionID, count) in store.locallyOpenSessionCount where count > 0 {
-                    guard let session = store.liveSessions[sessionID] else { continue }
-                    for _ in 0..<count {
-                        send(DICOMSyncMessage(kind: .annotationSessionOpened(
-                            sessionID: sessionID,
-                            sliceIndex: session.sliceIndex
-                        )))
-                    }
-                }
-            }
+            sessionStore?.notifyNewPeersArrived()
         }
     }
 
@@ -336,40 +270,32 @@ final class SharePlayCoordinator {
         case .examNotReady(let examType):
             var state = participantStates[participant.id]
             state?.loadedExams.remove(examType)
+            state?.examMetadata.removeValue(forKey: examType)
             participantStates[participant.id] = state
-            participantStates[participant.id]?.examMetadata.removeValue(forKey: examType)
 
         case .sessionStarted:
             sessionHasStarted = true
 
-        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed, .drawingSpaceOpened, .drawingSpaceClosed, .sharedWindowChanged, .sharedAnnotationChanged, .pdfScrollChanged:
+        case .sliceChanged, .presetChanged, .annotationSessionOpened, .annotationSessionClosed,
+             .drawingSpaceOpened, .drawingSpaceClosed, .sharedWindowChanged, .sharedAnnotationChanged, .pdfScrollChanged:
             isApplyingRemoteChange = true
             defer { isApplyingRemoteChange = false }
-            store?.applySharePlayMessage(message)
+            sessionStore?.applyMessage(message)
 
         case .clearDrawings:
-            store?.drawing.receiveClearDrawings()
+            sessionStore?.applyRemoteClearDrawings()
 
         case .undoDrawingStroke(let strokeID):
-            store?.drawing.remoteUndoStroke(id: strokeID)
+            sessionStore?.applyRemoteUndoStroke(id: strokeID)
 
         case .redoDrawingStroke(let strokeID):
-            store?.drawing.remoteRedoStroke(id: strokeID)
+            sessionStore?.applyRemoteRedoStroke(id: strokeID)
 
         case .removeAnnotationStrokes(let sessionID, let strokeIDs):
-            store?.removeAnnotationStrokes(sessionID: sessionID, ids: Set(strokeIDs))
+            sessionStore?.applyRemoteRemoveStrokes(sessionID: sessionID, strokeIDs: strokeIDs)
         }
     }
 
-    @MainActor
-    private func checkSessionStart() {
-        if !sessionHasStarted && allParticipantsReady {
-            sessionHasStarted = true
-        }
-    }
-
-    /// Leaves the current SharePlay session. The `.invalidated` state observer
-    /// fires automatically and calls `tearDown()`, resetting all session state.
     @MainActor
     func leaveSession() {
         session?.leave()

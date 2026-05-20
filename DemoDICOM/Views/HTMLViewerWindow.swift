@@ -2,16 +2,24 @@
 //  HTMLViewerWindow.swift
 //  DemoDICOM
 //
+//  Created by Igor Tarantino on 19/05/2026.
+//
+
+
+//
+//  HTMLViewerWindow.swift
+//  DemoDICOM
+//
 
 import SwiftUI
 import WebKit
 
 struct HTMLViewerWindow: View {
-    @Environment(DICOMStore.self) private var store
+    @Environment(AppStore.self) private var store
 
     var body: some View {
         Group {
-            if let url = store.htmlFileURL {
+            if let url = store.document.htmlFileURL {
                 WebView(url: url)
                     .ignoresSafeArea()
             } else {

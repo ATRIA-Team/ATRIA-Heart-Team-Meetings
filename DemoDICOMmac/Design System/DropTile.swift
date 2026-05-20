@@ -9,7 +9,7 @@ import AppKit
 
 struct DropTile: View {
     let category: Category
-    @ObservedObject var model: FolderModel
+    @Environment(FolderStore.self) private var store
     @State private var isTargeted = false
     @State private var isHovered = false
 
@@ -24,7 +24,7 @@ struct DropTile: View {
                 Text(category.rawValue)
                     .font(.headline)
 
-                let items = model.files[category] ?? []
+                let items = store.files[category] ?? []
                 if items.isEmpty {
                     Text("Drag files here")
                         .font(.caption)
@@ -52,7 +52,7 @@ struct DropTile: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                         Spacer()
-                        Button { model.remove(url, from: category) } label: {
+                        Button { store.remove(url, from: category) } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
@@ -66,16 +66,21 @@ struct DropTile: View {
     }
 
     private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
-        var collected: [URL] = []
-        let group = DispatchGroup()
-        for p in providers {
-            group.enter()
-            _ = p.loadObject(ofClass: URL.self) { url, _ in
-                if let url { collected.append(url) }
-                group.leave()
+        Task { @MainActor in
+            let urls = await withTaskGroup(of: URL?.self) { group in
+                for provider in providers {
+                    group.addTask {
+                        await withCheckedContinuation { continuation in
+                            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                                continuation.resume(returning: url)
+                            }
+                        }
+                    }
+                }
+                return await group.reduce(into: [URL]()) { if let url = $1 { $0.append(url) } }
             }
+            store.add(urls, to: category)
         }
-        group.notify(queue: .main) { model.add(collected, to: category) }
         return true
     }
 }
