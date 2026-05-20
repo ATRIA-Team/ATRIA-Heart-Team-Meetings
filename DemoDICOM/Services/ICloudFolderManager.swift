@@ -82,15 +82,15 @@ final class ICloudFolderManager {
             }
         }
 
-        let docMappings: [(String, (URL?) -> Void)] = [
-            ("Medical History", { store.setMedicalHistory($0) }),
-            ("Vitals",          { store.setVitals($0) }),
-            ("Blood Tests",     { store.setBloodTests($0) }),
-            ("Other",           { store.setOther($0) })
+        let docMappings: [(String, (URL) -> Void)] = [
+            ("Medical History", { store.addMedicalHistory($0) }),
+            ("Vitals",          { store.addVitals($0) }),
+            ("Blood Tests",     { store.addBloodTests($0) }),
+            ("Other",           { store.addOther($0) })
         ]
-        for (subfolderName, setter) in docMappings {
+        for (subfolderName, add) in docMappings {
             let subfolderURL = rootURL.appendingPathComponent(subfolderName)
-            setter(firstSupportedFile(in: subfolderURL, using: fm))
+            if let url = firstSupportedFile(in: subfolderURL, using: fm) { add(url) }
         }
     }
 

@@ -10,33 +10,38 @@ import DicomCore
 // MARK: - ViewerStore
 
 /// Owns all DICOM viewer state: exam bundles, selected exam, windowing preset, and loading/error state.
+/// Each exam type can hold multiple bundles (one per imported folder).
 /// Pure state container — import orchestration and SharePlay broadcasting are handled by AppStore.
 @Observable
 final class ViewerStore {
 
     // MARK: - DICOM exam storage
 
-    /// Independent data bundle per exam type. Echo, CT, and Coro can all be loaded simultaneously.
-    private(set) var dicomExams: [ExamType: DICOMExamBundle] = [:]
+    /// All imported bundles per exam type. nil means no import has been done for that type.
+    private(set) var dicomExams: [ExamType: [DICOMExamBundle]] = [:]
+
+    /// Which bundle is currently selected within each exam type's array.
+    private(set) var selectedBundleIndices: [ExamType: Int] = [:]
 
     /// The exam type currently shown in the viewer.
     var selectedDICOMExamType: ExamType?
 
-    /// DICOM exam types that have been successfully loaded, in display order.
+    /// DICOM exam types that have at least one successfully loaded bundle, in display order.
     var loadedDICOMExamTypes: [ExamType] {
-        [.echo, .ct, .coro].filter { !(dicomExams[$0]?.sliceImages.isEmpty ?? true) }
+        [.echo, .ct, .coro].filter { !(dicomExams[$0]?.isEmpty ?? true) }
     }
 
-    // MARK: - Computed slice state
+    // MARK: - Computed slice state (always relative to the selected bundle)
 
     var sliceImages: [CGImage] { selectedBundle?.sliceImages ?? [] }
 
     var currentSliceIndex: Int {
         get { selectedBundle?.currentSliceIndex ?? 0 }
         set {
-            guard let examType = selectedDICOMExamType,
-                  newValue != dicomExams[examType]?.currentSliceIndex else { return }
-            dicomExams[examType]?.currentSliceIndex = newValue
+            guard let examType = selectedDICOMExamType else { return }
+            let idx = selectedBundleIndices[examType] ?? 0
+            guard newValue != dicomExams[examType]?[safe: idx]?.currentSliceIndex else { return }
+            dicomExams[examType]?[idx].currentSliceIndex = newValue
         }
     }
 
@@ -48,8 +53,10 @@ final class ViewerStore {
     var currentSliceImage: CGImage? { selectedBundle?.currentSliceImage }
 
     private var selectedBundle: DICOMExamBundle? {
-        guard let examType = selectedDICOMExamType else { return nil }
-        return dicomExams[examType]
+        guard let examType = selectedDICOMExamType,
+              let bundles = dicomExams[examType], !bundles.isEmpty else { return nil }
+        let idx = selectedBundleIndices[examType] ?? 0
+        return bundles[safe: idx] ?? bundles[0]
     }
 
     // MARK: - Window preset
@@ -66,7 +73,8 @@ final class ViewerStore {
     func applyRemoteSliceChange(_ index: Int) {
         guard index >= 0, index < sliceCount,
               let examType = selectedDICOMExamType else { return }
-        dicomExams[examType]?.currentSliceIndex = index
+        let idx = selectedBundleIndices[examType] ?? 0
+        dicomExams[examType]?[idx].currentSliceIndex = index
     }
 
     func applyRemotePresetChange(_ preset: MedicalPreset) {
@@ -76,14 +84,16 @@ final class ViewerStore {
     // MARK: - Exam management (called by AppStore)
 
     func prepareForImport(examType: ExamType) {
-        dicomExams[examType] = DICOMExamBundle()
         selectedDICOMExamType = examType
         isLoading = true
         errorMessage = nil
     }
 
+    /// Appends the imported bundle and selects it immediately.
     func applyImportResult(_ bundle: DICOMExamBundle, examType: ExamType) {
-        dicomExams[examType] = bundle
+        if dicomExams[examType] == nil { dicomExams[examType] = [] }
+        dicomExams[examType]!.append(bundle)
+        selectedBundleIndices[examType] = dicomExams[examType]!.count - 1
         selectedDICOMExamType = examType
         isLoading = false
     }
@@ -93,18 +103,42 @@ final class ViewerStore {
         isLoading = false
     }
 
+    /// Removes all bundles for the given exam type.
     func removeExam(_ examType: ExamType) {
         dicomExams[examType] = nil
+        selectedBundleIndices[examType] = nil
         if selectedDICOMExamType == examType { selectedDICOMExamType = nil }
+    }
+
+    /// Removes a single bundle by id. Adjusts the selected index; clears the exam type if no bundles remain.
+    func removeBundle(id: UUID, examType: ExamType) {
+        dicomExams[examType]?.removeAll { $0.id == id }
+        if dicomExams[examType]?.isEmpty == true { dicomExams[examType] = nil }
+        let remaining = dicomExams[examType]?.count ?? 0
+        if remaining == 0 {
+            selectedBundleIndices[examType] = nil
+            if selectedDICOMExamType == examType { selectedDICOMExamType = nil }
+        } else {
+            let current = selectedBundleIndices[examType] ?? 0
+            selectedBundleIndices[examType] = min(current, remaining - 1)
+        }
+    }
+
+    /// Selects a specific bundle within an exam type.
+    func selectBundle(index: Int, examType: ExamType) {
+        guard let bundles = dicomExams[examType], bundles.indices.contains(index) else { return }
+        selectedBundleIndices[examType] = index
+        selectedDICOMExamType = examType
     }
 
     // MARK: - Windowing re-application
 
-    /// Re-applies the current preset to the raw buffers of the selected exam.
+    /// Re-applies the current preset to the raw buffers of the selected bundle.
     /// Calls `onComplete` on the MainActor when done.
     func reapplyWindowing(onComplete: @MainActor @escaping ([CGImage], ExamType) -> Void) {
-        guard let examType = selectedDICOMExamType,
-              let bundle = dicomExams[examType],
+        guard let examType = selectedDICOMExamType else { return }
+        let idx = selectedBundleIndices[examType] ?? 0
+        guard let bundle = dicomExams[examType]?[safe: idx],
               !bundle.rawPixelBuffers16.isEmpty else { return }
 
         isLoading = true
@@ -125,10 +159,20 @@ final class ViewerStore {
     }
 
     func applyRewindowedImages(_ images: [CGImage], examType: ExamType) {
-        dicomExams[examType]?.sliceImages = images
-        if (dicomExams[examType]?.currentSliceIndex ?? 0) >= images.count {
-            dicomExams[examType]?.currentSliceIndex = max(0, images.count - 1)
+        let idx = selectedBundleIndices[examType] ?? 0
+        guard dicomExams[examType]?.indices.contains(idx) == true else { return }
+        dicomExams[examType]![idx].sliceImages = images
+        if dicomExams[examType]![idx].currentSliceIndex >= images.count {
+            dicomExams[examType]![idx].currentSliceIndex = max(0, images.count - 1)
         }
         isLoading = false
+    }
+}
+
+// MARK: - Array safe subscript
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }

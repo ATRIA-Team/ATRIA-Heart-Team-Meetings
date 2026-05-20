@@ -12,65 +12,125 @@ import Foundation
 @Suite("DocumentStore")
 struct DocumentStoreTests {
 
-    private let sampleURL = URL(fileURLWithPath: "/tmp/sample.pdf")
+    private let urlA = URL(fileURLWithPath: "/tmp/a.pdf")
+    private let urlB = URL(fileURLWithPath: "/tmp/b.pdf")
 
-    // MARK: - URL setters
+    // MARK: - addMedicalHistory
 
-    @Test("setMedicalHistory stores the URL")
-    func setMedicalHistory() {
+    @Test("addMedicalHistory appends the URL")
+    func addMedicalHistory() {
         let store = DocumentStore()
-        store.setMedicalHistory(sampleURL)
-        #expect(store.medicalHistoryURL == sampleURL)
+        store.addMedicalHistory(urlA)
+        #expect(store.medicalHistoryURLs.contains(urlA))
     }
 
-    @Test("setMedicalHistory with nil clears the URL")
-    func setMedicalHistoryNil() {
+    @Test("addMedicalHistory ignores duplicate URLs")
+    func addMedicalHistoryNoDuplicates() {
         let store = DocumentStore()
-        store.setMedicalHistory(sampleURL)
-        store.setMedicalHistory(nil)
-        #expect(store.medicalHistoryURL == nil)
+        store.addMedicalHistory(urlA)
+        store.addMedicalHistory(urlA)
+        #expect(store.medicalHistoryURLs.count == 1)
     }
 
-    @Test("setVitals stores the URL")
-    func setVitals() {
+    @Test("addMedicalHistory supports multiple distinct URLs")
+    func addMedicalHistoryMultiple() {
         let store = DocumentStore()
-        store.setVitals(sampleURL)
-        #expect(store.vitalsURL == sampleURL)
+        store.addMedicalHistory(urlA)
+        store.addMedicalHistory(urlB)
+        #expect(store.medicalHistoryURLs.count == 2)
+        #expect(store.medicalHistoryURLs.contains(urlA))
+        #expect(store.medicalHistoryURLs.contains(urlB))
     }
 
-    @Test("setBloodTests stores the URL")
-    func setBloodTests() {
+    // MARK: - removeMedicalHistory
+
+    @Test("removeMedicalHistory removes the specified URL")
+    func removeMedicalHistory() {
         let store = DocumentStore()
-        store.setBloodTests(sampleURL)
-        #expect(store.bloodTestURL == sampleURL)
+        store.addMedicalHistory(urlA)
+        store.addMedicalHistory(urlB)
+        store.removeMedicalHistory(urlA)
+        #expect(!store.medicalHistoryURLs.contains(urlA))
+        #expect(store.medicalHistoryURLs.contains(urlB))
     }
 
-    @Test("setOther stores the URL")
-    func setOther() {
+    @Test("removeMedicalHistory leaves the list empty when the last URL is removed")
+    func removeMedicalHistoryLast() {
         let store = DocumentStore()
-        store.setOther(sampleURL)
-        #expect(store.otherFileURL == sampleURL)
+        store.addMedicalHistory(urlA)
+        store.removeMedicalHistory(urlA)
+        #expect(store.medicalHistoryURLs.isEmpty)
     }
 
-    // MARK: - documentURL(for:)
+    // MARK: - addVitals / addBloodTests / addOther
 
-    @Test("documentURL returns the correct URL for each document exam type")
-    func documentURLMapping() {
+    @Test("addVitals appends the URL")
+    func addVitals() {
         let store = DocumentStore()
-        let urlA = URL(fileURLWithPath: "/a")
-        let urlB = URL(fileURLWithPath: "/b")
-        let urlC = URL(fileURLWithPath: "/c")
-        let urlD = URL(fileURLWithPath: "/d")
+        store.addVitals(urlA)
+        #expect(store.vitalsURLs.contains(urlA))
+    }
 
-        store.setMedicalHistory(urlA)
-        store.setVitals(urlB)
-        store.setBloodTests(urlC)
-        store.setOther(urlD)
+    @Test("addBloodTests appends the URL")
+    func addBloodTests() {
+        let store = DocumentStore()
+        store.addBloodTests(urlA)
+        #expect(store.bloodTestURLs.contains(urlA))
+    }
 
+    @Test("addOther appends the URL")
+    func addOther() {
+        let store = DocumentStore()
+        store.addOther(urlA)
+        #expect(store.otherFileURLs.contains(urlA))
+    }
+
+    // MARK: - documentURLs(for:)
+
+    @Test("documentURLs returns all URLs for each document exam type")
+    func documentURLsMapping() {
+        let store = DocumentStore()
+        let u1 = URL(fileURLWithPath: "/a")
+        let u2 = URL(fileURLWithPath: "/b")
+        let u3 = URL(fileURLWithPath: "/c")
+        let u4 = URL(fileURLWithPath: "/d")
+
+        store.addMedicalHistory(u1)
+        store.addVitals(u2)
+        store.addBloodTests(u3)
+        store.addOther(u4)
+
+        #expect(store.documentURLs(for: .medicalHistory).contains(u1))
+        #expect(store.documentURLs(for: .vitals).contains(u2))
+        #expect(store.documentURLs(for: .bloodTests).contains(u3))
+        #expect(store.documentURLs(for: .other).contains(u4))
+    }
+
+    @Test("documentURLs returns empty for DICOM exam types")
+    func documentURLsEmptyForDICOM() {
+        let store = DocumentStore()
+        #expect(store.documentURLs(for: .echo).isEmpty)
+        #expect(store.documentURLs(for: .ct).isEmpty)
+        #expect(store.documentURLs(for: .coro).isEmpty)
+    }
+
+    // MARK: - documentURL(for:) — active / first URL
+
+    @Test("documentURL returns the first URL when no active URL is set")
+    func documentURLReturnsFirst() {
+        let store = DocumentStore()
+        store.addMedicalHistory(urlA)
+        store.addMedicalHistory(urlB)
         #expect(store.documentURL(for: .medicalHistory) == urlA)
-        #expect(store.documentURL(for: .vitals) == urlB)
-        #expect(store.documentURL(for: .bloodTests) == urlC)
-        #expect(store.documentURL(for: .other) == urlD)
+    }
+
+    @Test("documentURL returns the active URL when one is explicitly set")
+    func documentURLReturnsActive() {
+        let store = DocumentStore()
+        store.addMedicalHistory(urlA)
+        store.addMedicalHistory(urlB)
+        store.setActiveDocumentURL(urlB, examType: .medicalHistory)
+        #expect(store.documentURL(for: .medicalHistory) == urlB)
     }
 
     @Test("documentURL returns nil for DICOM exam types")

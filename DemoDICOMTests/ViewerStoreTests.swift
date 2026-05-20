@@ -63,12 +63,12 @@ struct ViewerStoreTests {
 
     // MARK: - applyImportResult
 
-    @Test("applyImportResult stores the bundle and clears loading")
+    @Test("applyImportResult appends the bundle and clears loading")
     func applyImportResult() {
         let store = ViewerStore()
         let bundle = makeBundle(sliceCount: 5)
         store.applyImportResult(bundle, examType: .ct)
-        #expect(store.dicomExams[.ct] != nil)
+        #expect(store.dicomExams[.ct]?.isEmpty == false)
         #expect(!store.isLoading)
     }
 
@@ -77,6 +77,22 @@ struct ViewerStoreTests {
         let store = ViewerStore()
         store.applyImportResult(makeBundle(), examType: .echo)
         #expect(store.selectedDICOMExamType == .echo)
+    }
+
+    @Test("applyImportResult appends multiple bundles for the same exam type")
+    func applyImportResultMultipleBundles() {
+        let store = ViewerStore()
+        store.applyImportResult(makeBundle(sliceCount: 3), examType: .ct)
+        store.applyImportResult(makeBundle(sliceCount: 5), examType: .ct)
+        #expect(store.dicomExams[.ct]?.count == 2)
+    }
+
+    @Test("applyImportResult selects the most recently imported bundle")
+    func applyImportResultSelectsLatestBundle() {
+        let store = ViewerStore()
+        store.applyImportResult(makeBundle(sliceCount: 3), examType: .ct)
+        store.applyImportResult(makeBundle(sliceCount: 5), examType: .ct)
+        #expect(store.sliceImages.count == 5)
     }
 
     @Test("sliceImages returns the bundle slices after a successful import")
@@ -100,7 +116,7 @@ struct ViewerStoreTests {
 
     // MARK: - removeExam
 
-    @Test("removeExam removes the bundle for that exam type")
+    @Test("removeExam removes all bundles for that exam type")
     func removeExam() {
         let store = ViewerStore()
         store.applyImportResult(makeBundle(), examType: .ct)
@@ -123,6 +139,43 @@ struct ViewerStoreTests {
         store.applyImportResult(makeBundle(), examType: .ct)  // CT is now selected
         store.removeExam(.echo)                               // remove a different exam
         #expect(store.selectedDICOMExamType == .ct)
+    }
+
+    // MARK: - removeBundle
+
+    @Test("removeBundle removes only the targeted bundle by id")
+    func removeBundleById() {
+        let store = ViewerStore()
+        let first  = makeBundle(sliceCount: 3)
+        let second = makeBundle(sliceCount: 5)
+        store.applyImportResult(first,  examType: .ct)
+        store.applyImportResult(second, examType: .ct)
+        store.removeBundle(id: first.id, examType: .ct)
+        #expect(store.dicomExams[.ct]?.count == 1)
+        #expect(store.dicomExams[.ct]?.first?.id == second.id)
+    }
+
+    @Test("removeBundle clears the exam type when the last bundle is removed")
+    func removeBundleClearsExamType() {
+        let store = ViewerStore()
+        let bundle = makeBundle()
+        store.applyImportResult(bundle, examType: .echo)
+        store.removeBundle(id: bundle.id, examType: .echo)
+        #expect(store.dicomExams[.echo] == nil)
+        #expect(store.selectedDICOMExamType == nil)
+    }
+
+    // MARK: - selectBundle
+
+    @Test("selectBundle switches the active bundle within an exam type")
+    func selectBundle() {
+        let store = ViewerStore()
+        let first  = makeBundle(sliceCount: 2)
+        let second = makeBundle(sliceCount: 7)
+        store.applyImportResult(first,  examType: .ct)
+        store.applyImportResult(second, examType: .ct)
+        store.selectBundle(index: 0, examType: .ct)
+        #expect(store.sliceImages.count == 2)
     }
 
     // MARK: - loadedDICOMExamTypes
@@ -186,7 +239,7 @@ struct ViewerStoreTests {
 
     // MARK: - applyRewindowedImages
 
-    @Test("applyRewindowedImages replaces sliceImages for the given exam type")
+    @Test("applyRewindowedImages replaces sliceImages for the selected bundle")
     func applyRewindowedImages() {
         let store = ViewerStore()
         store.applyImportResult(makeBundle(sliceCount: 2), examType: .ct)

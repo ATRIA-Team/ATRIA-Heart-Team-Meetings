@@ -4,12 +4,17 @@
 //
 
 import CoreGraphics
+import Foundation
 
 // MARK: - DICOMExamBundle
 
 /// An in-memory representation of a decoded DICOM exam: rendered slice images,
 /// raw 16-bit pixel buffers for re-windowing, metadata, and playback state.
 struct DICOMExamBundle {
+
+    // MARK: - Identity
+
+    let id: UUID
 
     // MARK: - Rendered images
 
@@ -43,6 +48,7 @@ struct DICOMExamBundle {
     // MARK: - Init
 
     init(
+        id: UUID = UUID(),
         sliceImages: [CGImage] = [],
         rawPixelBuffers16: [([UInt16], Int, Int)] = [],
         currentSliceIndex: Int = 0,
@@ -51,6 +57,7 @@ struct DICOMExamBundle {
         seriesDescription: String = "",
         modality: String = ""
     ) {
+        self.id = id
         self.sliceImages = sliceImages
         self.rawPixelBuffers16 = rawPixelBuffers16
         self.currentSliceIndex = currentSliceIndex

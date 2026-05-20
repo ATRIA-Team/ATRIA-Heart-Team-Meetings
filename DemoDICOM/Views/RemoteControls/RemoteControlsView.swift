@@ -2,8 +2,6 @@
 //  RemoteControlsView.swift
 //  DemoDICOM
 //
-//  Created by Igor Tarantino on 06/05/2026.
-//
 
 import SwiftUI
 
@@ -13,6 +11,19 @@ struct RemoteControlsView: View {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+
+    // MARK: - File picker popover state
+
+    private struct FilePickerTarget: Identifiable {
+        enum Action { case open, push }
+        let id = UUID()
+        let examType: ExamType
+        let action: Action
+    }
+
+    @State private var filePickerTarget: FilePickerTarget? = nil
+
+    // MARK: - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 30) {
@@ -25,9 +36,9 @@ struct RemoteControlsView: View {
             }
 
             HStack(spacing: 30) {
-                remoteButton(.ct,   icon: "waveform.path.ecg.rectangle.fill", text: "CT")
-                remoteButton(.coro, icon: "heart.fill",                        text: "Coro")
-                remoteButton(.other, icon: "heart.text.clipboard.fill",        text: "Other")
+                remoteButton(.ct,    icon: "waveform.path.ecg.rectangle.fill", text: "CT")
+                remoteButton(.coro,  icon: "heart.fill",                        text: "Coro")
+                remoteButton(.other, icon: "heart.text.clipboard.fill",         text: "Other")
             }
 
             HStack(spacing: 8) {
@@ -42,6 +53,9 @@ struct RemoteControlsView: View {
             drawingToolbar
         }
         .padding(30)
+        .popover(item: $filePickerTarget) { target in
+            filePickerPopover(for: target)
+        }
     }
 
     // MARK: - Drawing toolbar
@@ -126,31 +140,126 @@ struct RemoteControlsView: View {
         RemoteControlButton(
             icon: isShared ? "checkmark.circle.fill" : icon,
             text: text,
-            action: { openLocally(examType) },
-            longPressAction: { store.pushToSharedWindow(examType) }
+            action: {
+                if hasMultipleFiles(examType) {
+                    filePickerTarget = FilePickerTarget(examType: examType, action: .open)
+                } else {
+                    openLocally(examType)
+                }
+            },
+            longPressAction: {
+                if hasMultipleFiles(examType) {
+                    filePickerTarget = FilePickerTarget(examType: examType, action: .push)
+                } else {
+                    store.pushToSharedWindow(examType)
+                }
+            }
         )
     }
 
-    // MARK: - Local action (quick pinch)
+    // MARK: - Multi-file detection
+
+    private func hasMultipleFiles(_ examType: ExamType) -> Bool {
+        switch examType {
+        case .echo, .ct, .coro:
+            return (store.viewer.dicomExams[examType]?.count ?? 0) > 1
+        default:
+            return store.document.documentURLs(for: examType).count > 1
+        }
+    }
+
+    // MARK: - Local action (quick pinch, single file)
 
     private func openLocally(_ examType: ExamType) {
         switch examType {
         case .echo, .ct, .coro:
             store.viewer.selectedDICOMExamType = examType
         case .medicalHistory:
-            if let url = store.document.medicalHistoryURL { openDocumentLocally(url) }
+            if let url = store.document.documentURL(for: .medicalHistory) { openDocumentLocally(url) }
         case .vitals:
-            if let url = store.document.vitalsURL { openDocumentLocally(url) }
+            if let url = store.document.documentURL(for: .vitals) { openDocumentLocally(url) }
         case .bloodTests:
-            if let url = store.document.bloodTestURL { openDocumentLocally(url) }
+            if let url = store.document.documentURL(for: .bloodTests) { openDocumentLocally(url) }
         case .other:
-            if let url = store.document.otherFileURL { openDocumentLocally(url) }
+            if let url = store.document.documentURL(for: .other) { openDocumentLocally(url) }
         }
     }
 
     private func openDocumentLocally(_ url: URL) {
         store.document.pdfFileURL = url
         openWindow(id: "pdfViewer")
+    }
+
+    // MARK: - File picker popover content
+
+    @ViewBuilder
+    private func filePickerPopover(for target: FilePickerTarget) -> some View {
+        let examType = target.examType
+        NavigationStack {
+            List {
+                switch examType {
+                case .echo, .ct, .coro:
+                    let bundles = store.viewer.dicomExams[examType] ?? []
+                    ForEach(bundles.indices, id: \.self) { index in
+                        let bundle = bundles[index]
+                        Button {
+                            store.viewer.selectBundle(index: index, examType: examType)
+                            if target.action == .push {
+                                store.pushToSharedWindow(examType)
+                            }
+                            filePickerTarget = nil
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(bundle.seriesDescription.isEmpty ? "Scan \(index + 1)" : bundle.seriesDescription)
+                                        .font(.body)
+                                    Text("\(bundle.sliceCount) slices")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if (store.viewer.selectedBundleIndices[examType] ?? 0) == index &&
+                                   store.viewer.selectedDICOMExamType == examType {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                    }
+                default:
+                    let urls = store.document.documentURLs(for: examType)
+                    ForEach(urls, id: \.self) { url in
+                        Button {
+                            if target.action == .open {
+                                openDocumentLocally(url)
+                            } else {
+                                store.document.setActiveDocumentURL(url, examType: examType)
+                                store.pushToSharedWindow(examType)
+                            }
+                            filePickerTarget = nil
+                        } label: {
+                            HStack {
+                                Text(url.lastPathComponent)
+                                    .font(.body)
+                                Spacer()
+                                if store.document.documentURL(for: examType) == url {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle(examType.displayName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { filePickerTarget = nil }
+                }
+            }
+        }
+        .frame(width: 320, height: 360)
     }
 }
 

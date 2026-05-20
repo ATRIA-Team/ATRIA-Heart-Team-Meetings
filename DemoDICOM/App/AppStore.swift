@@ -175,26 +175,46 @@ final class AppStore {
         }
     }
 
-    // MARK: - Document URL actions (broadcasts on change)
+    // MARK: - Document URL actions (append; broadcasts the newly added file)
 
-    func setMedicalHistory(_ url: URL?) {
-        document.setMedicalHistory(url)
+    func addMedicalHistory(_ url: URL) {
+        document.addMedicalHistory(url)
         broadcastDocumentChange(.medicalHistory, url: url)
     }
 
-    func setVitals(_ url: URL?) {
-        document.setVitals(url)
+    func removeMedicalHistory(_ url: URL) {
+        document.removeMedicalHistory(url)
+        if document.medicalHistoryURLs.isEmpty { session.broadcastExamNotReady(type: .medicalHistory) }
+    }
+
+    func addVitals(_ url: URL) {
+        document.addVitals(url)
         broadcastDocumentChange(.vitals, url: url)
     }
 
-    func setBloodTests(_ url: URL?) {
-        document.setBloodTests(url)
+    func removeVitals(_ url: URL) {
+        document.removeVitals(url)
+        if document.vitalsURLs.isEmpty { session.broadcastExamNotReady(type: .vitals) }
+    }
+
+    func addBloodTests(_ url: URL) {
+        document.addBloodTests(url)
         broadcastDocumentChange(.bloodTests, url: url)
     }
 
-    func setOther(_ url: URL?) {
-        document.setOther(url)
+    func removeBloodTests(_ url: URL) {
+        document.removeBloodTests(url)
+        if document.bloodTestURLs.isEmpty { session.broadcastExamNotReady(type: .bloodTests) }
+    }
+
+    func addOther(_ url: URL) {
+        document.addOther(url)
         broadcastDocumentChange(.other, url: url)
+    }
+
+    func removeOther(_ url: URL) {
+        document.removeOther(url)
+        if document.otherFileURLs.isEmpty { session.broadcastExamNotReady(type: .other) }
     }
 
     // MARK: - DICOM import
@@ -203,6 +223,14 @@ final class AppStore {
     func removeExam(_ examType: ExamType) {
         viewer.removeExam(examType)
         session.broadcastExamNotReady(type: examType)
+    }
+
+    @MainActor
+    func removeBundle(id: UUID, examType: ExamType) {
+        viewer.removeBundle(id: id, examType: examType)
+        if viewer.dicomExams[examType] == nil {
+            session.broadcastExamNotReady(type: examType)
+        }
     }
 
     @MainActor
@@ -246,15 +274,19 @@ final class AppStore {
 
     @MainActor
     func broadcastAllLoadedExams() {
-        for (examType, bundle) in viewer.dicomExams where !bundle.sliceImages.isEmpty {
-            session.broadcastExamReady(
-                type: examType,
-                metadata: .dicom(sliceCount: bundle.sliceCount, seriesDescription: bundle.seriesDescription, patientName: bundle.patientName)
-            )
+        for (examType, bundles) in viewer.dicomExams {
+            let idx = viewer.selectedBundleIndices[examType] ?? 0
+            let bundle = idx < bundles.count ? bundles[idx] : bundles[0]
+            if !bundle.sliceImages.isEmpty {
+                session.broadcastExamReady(
+                    type: examType,
+                    metadata: .dicom(sliceCount: bundle.sliceCount, seriesDescription: bundle.seriesDescription, patientName: bundle.patientName)
+                )
+            }
         }
-        if let url = document.medicalHistoryURL { broadcastDocumentChange(.medicalHistory, url: url) }
-        if let url = document.vitalsURL         { broadcastDocumentChange(.vitals,         url: url) }
-        if let url = document.bloodTestURL      { broadcastDocumentChange(.bloodTests,     url: url) }
-        if let url = document.otherFileURL      { broadcastDocumentChange(.other,          url: url) }
+        if let url = document.medicalHistoryURLs.first { broadcastDocumentChange(.medicalHistory, url: url) }
+        if let url = document.vitalsURLs.first         { broadcastDocumentChange(.vitals,         url: url) }
+        if let url = document.bloodTestURLs.first      { broadcastDocumentChange(.bloodTests,     url: url) }
+        if let url = document.otherFileURLs.first      { broadcastDocumentChange(.other,          url: url) }
     }
 }

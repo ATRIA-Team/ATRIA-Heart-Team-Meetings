@@ -62,10 +62,10 @@ struct LobbyView: View {
             case .echo:           store.importFolder(url: url, examType: .echo)
             case .ct:             store.importFolder(url: url, examType: .ct)
             case .coro:           store.importFolder(url: url, examType: .coro)
-            case .medicalHistory: store.setMedicalHistory(url)
-            case .vitals:         store.setVitals(url)
-            case .bloodTests:     store.setBloodTests(url)
-            case .other:          store.setOther(url)
+            case .medicalHistory: store.addMedicalHistory(url)
+            case .vitals:         store.addVitals(url)
+            case .bloodTests:     store.addBloodTests(url)
+            case .other:          store.addOther(url)
             case .iCloudFolder:
                 try? store.iCloud.selectFolder(url)
                 store.iCloud.loadAllFiles(into: store)
@@ -187,31 +187,38 @@ struct LobbyView: View {
 
     private var uploadedFileEntries: [FileEntry] {
         var entries: [FileEntry] = []
+
         let dicomTypes: [(ExamType, String, String)] = [
             (.echo,  "waveform.path.ecg.text.clipboard.fill", "Echo"),
             (.ct,    "waveform.path.ecg.rectangle.fill",      "CT Scan"),
             (.coro,  "heart.fill",                            "Coronary"),
         ]
         for (examType, icon, label) in dicomTypes {
-            if let bundle = store.viewer.dicomExams[examType], bundle.sliceCount > 0 {
+            for bundle in store.viewer.dicomExams[examType] ?? [] where bundle.sliceCount > 0 {
+                let bundleID = bundle.id
+                let detail = bundle.seriesDescription.isEmpty
+                    ? "\(bundle.sliceCount) slices"
+                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
                 entries.append(FileEntry(icon: icon, tint: .blue, label: label,
-                                         detail: "\(bundle.sliceCount) slices",
-                                         removeAction: { [store] in store.removeExam(examType) }))
+                                         detail: detail,
+                                         removeAction: { [store] in store.removeBundle(id: bundleID, examType: examType) }))
             }
         }
-        let docTypes: [(URL?, String, String, Color, () -> Void)] = [
-            (store.document.medicalHistoryURL, "list.bullet.clipboard.fill", "Medical History", .green,  { store.setMedicalHistory(nil) }),
-            (store.document.vitalsURL,         "stethoscope",                "Vitals",          .orange, { store.setVitals(nil) }),
-            (store.document.bloodTestURL,      "drop.fill",                  "Blood Tests",     .red,    { store.setBloodTests(nil) }),
-            (store.document.otherFileURL,      "heart.text.clipboard.fill",  "Other",           .purple, { store.setOther(nil) }),
+
+        let docTypes: [([URL], String, String, Color, (URL) -> Void)] = [
+            (store.document.medicalHistoryURLs, "list.bullet.clipboard.fill", "Medical History", .green,  { store.removeMedicalHistory($0) }),
+            (store.document.vitalsURLs,         "stethoscope",                "Vitals",          .orange, { store.removeVitals($0) }),
+            (store.document.bloodTestURLs,      "drop.fill",                  "Blood Tests",     .red,    { store.removeBloodTests($0) }),
+            (store.document.otherFileURLs,      "heart.text.clipboard.fill",  "Other",           .purple, { store.removeOther($0) }),
         ]
-        for (url, icon, label, tint, remove) in docTypes {
-            if let url {
+        for (urls, icon, label, tint, remove) in docTypes {
+            for url in urls {
                 entries.append(FileEntry(icon: icon, tint: tint, label: label,
                                          detail: url.lastPathComponent,
-                                         removeAction: remove))
+                                         removeAction: { remove(url) }))
             }
         }
+
         return entries
     }
 
