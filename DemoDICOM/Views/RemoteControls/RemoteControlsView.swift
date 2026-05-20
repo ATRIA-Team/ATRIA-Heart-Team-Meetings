@@ -209,20 +209,12 @@ struct RemoteControlsView: View {
                             }
                             filePickerTarget = nil
                         } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(bundle.seriesDescription.isEmpty ? "Scan \(index + 1)" : bundle.seriesDescription)
-                                        .font(.body)
-                                    Text("\(bundle.sliceCount) slices")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if (store.viewer.selectedBundleIndices[examType] ?? 0) == index &&
-                                   store.viewer.selectedDICOMExamType == examType {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(bundle.seriesDescription.isEmpty ? "Scan \(index + 1)" : bundle.seriesDescription)
+                                    .font(.body)
+                                Text("\(bundle.sliceCount) slices")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -238,15 +230,8 @@ struct RemoteControlsView: View {
                             }
                             filePickerTarget = nil
                         } label: {
-                            HStack {
-                                Text(url.lastPathComponent)
-                                    .font(.body)
-                                Spacer()
-                                if store.document.documentURL(for: examType) == url {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.tint)
-                                }
-                            }
+                            Text(url.lastPathComponent)
+                                .font(.body)
                         }
                     }
                 }
