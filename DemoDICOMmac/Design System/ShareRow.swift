@@ -11,7 +11,7 @@ struct ShareRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Folder Ready")
+            Text("Package Ready")
                 .font(.headline)
                 .padding(.leading, 2)
 
