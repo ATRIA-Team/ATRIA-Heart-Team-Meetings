@@ -19,12 +19,18 @@ actor FolderOrganiser: FolderOrganising {
 
     func createFolder(named name: String, in parent: URL, files: [Category: [URL]]) async throws -> URL {
         let packageName = name.hasSuffix(".atria") ? name : "\(name).atria"
-        let root = parent.appendingPathComponent(packageName, isDirectory: true)
-        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let destination = parent.appendingPathComponent(packageName)
+
+        // Build directory structure in a temp folder, then archive it.
+        let tempRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempRoot) }
+
+        try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
 
         var manifestCategories: [String: [String]] = [:]
         for category in Category.allCases {
-            let sub = root.appendingPathComponent(category.rawValue, isDirectory: true)
+            let sub = tempRoot.appendingPathComponent(category.rawValue, isDirectory: true)
             try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
             var filenames: [String] = []
             for src in files[category] ?? [] {
@@ -46,10 +52,11 @@ actor FolderOrganiser: FolderOrganising {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(manifest)
-        try data.write(to: root.appendingPathComponent("manifest.json"))
+        let manifestData = try encoder.encode(manifest)
+        try manifestData.write(to: tempRoot.appendingPathComponent("manifest.json"))
 
-        return root
+        try AtriaArchive.write(from: tempRoot, to: destination)
+        return destination
     }
 
     func moveToICloud(_ url: URL) async throws -> URL {
@@ -57,7 +64,7 @@ actor FolderOrganiser: FolderOrganising {
             throw FolderOrganiserError.iCloudNotAvailable
         }
         try FileManager.default.createDirectory(at: iCloudRoot, withIntermediateDirectories: true)
-        let destination = iCloudRoot.appendingPathComponent(url.lastPathComponent, isDirectory: true)
+        let destination = iCloudRoot.appendingPathComponent(url.lastPathComponent)
         if FileManager.default.fileExists(atPath: destination.path) {
             try FileManager.default.removeItem(at: destination)
         }

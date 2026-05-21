@@ -25,7 +25,7 @@ struct LobbyView: View {
         var allowedTypes: [UTType] {
             switch self {
             case .echo, .ct, .coro: return [.folder]
-            case .iCloudFolder: return [.folder]
+            case .iCloudFolder: return [.atriaPackage]
             case .medicalHistory, .bloodTests, .vitals, .other: return [.pdf, .image]
             }
         }
@@ -72,12 +72,7 @@ struct LobbyView: View {
             case .bloodTests:     store.addBloodTests(url)
             case .other:          store.addOther(url)
             case .iCloudFolder:
-                if url.pathExtension.lowercased() == "atria" {
-                    store.iCloud.openAtriaPackage(url, into: store)
-                } else {
-                    try? store.iCloud.selectFolder(url)
-                    store.iCloud.loadAllFiles(into: store)
-                }
+                store.iCloud.openAtriaPackage(url, into: store)
             case nil:             break
             }
         }

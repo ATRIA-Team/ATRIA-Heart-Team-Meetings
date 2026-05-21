@@ -11,8 +11,7 @@
 			<string>ATRIA Package</string>
 			<key>UTTypeConformsTo</key>
 			<array>
-				<string>com.apple.package</string>
-				<string>public.folder</string>
+				<string>public.data</string>
 			</array>
 			<key>UTTypeTagSpecification</key>
 			<dict>

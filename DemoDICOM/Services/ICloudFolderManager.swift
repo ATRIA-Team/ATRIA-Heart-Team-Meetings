@@ -25,10 +25,13 @@ final class ICloudFolderManager {
     // Security-scoped access for the plain iCloud folder.
     private var rootScopeAccessed = false
 
-    // Security-scoped access and bookmark for .atria packages.
+    // Security-scoped access and bookmark for .atria files.
     private var atriaURL: URL?
     private var atriaAccessed = false
     private static let atriaBookmarkKey = "atriaPackageBookmark"
+
+    // Local extraction directory (inside the app's caches folder).
+    private var extractedAtriaDir: URL?
 
     // MARK: - Lifecycle
 
@@ -51,8 +54,8 @@ final class ICloudFolderManager {
         startRootAccess()
     }
 
-    /// Opens an `.atria` package, persists a security-scoped bookmark, and loads
-    /// all exam files from its category subfolders into `store`.
+    /// Opens an `.atria` file, extracts it to the app's caches directory, persists
+    /// a security-scoped bookmark, and loads all exam files into `store`.
     func openAtriaPackage(_ url: URL, into store: AppStore) {
         stopRootAccess()
         controller.clearFolder()
@@ -61,7 +64,26 @@ final class ICloudFolderManager {
         atriaURL = url
         atriaAccessed = url.startAccessingSecurityScopedResource()
         folderDisplayName = url.deletingPathExtension().lastPathComponent
-        loadFiles(from: url, into: store)
+
+        do {
+            let extracted = try extractedDirectory(for: url)
+            extractedAtriaDir = extracted
+            loadFiles(from: extracted, into: store)
+        } catch {
+            // Extraction failed — nothing to load.
+        }
+    }
+
+    private func extractedDirectory(for archiveURL: URL) throws -> URL {
+        let name = archiveURL.deletingPathExtension().lastPathComponent
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let dest = caches.appendingPathComponent("atria_extracted/\(name)", isDirectory: true)
+        // Re-extract every time to pick up changes from iCloud sync.
+        if FileManager.default.fileExists(atPath: dest.path) {
+            try FileManager.default.removeItem(at: dest)
+        }
+        try AtriaArchive.extract(archiveURL, to: dest)
+        return dest
     }
 
     func clearFolder() {
@@ -69,19 +91,24 @@ final class ICloudFolderManager {
         controller.clearFolder()
         stopAtriaAccess()
         clearAtriaBookmark()
+        if let dir = extractedAtriaDir {
+            try? FileManager.default.removeItem(at: dir)
+            extractedAtriaDir = nil
+        }
         folderDisplayName = nil
     }
 
     // MARK: - Loading
 
     func loadAllFiles(into store: AppStore) {
-        let rootURL = atriaURL ?? controller.folderURL
-        guard let rootURL else { return }
-
-        if atriaURL == nil, !rootScopeAccessed, let url = controller.folderURL {
-            rootScopeAccessed = url.startAccessingSecurityScopedResource()
+        if let extracted = extractedAtriaDir {
+            loadFiles(from: extracted, into: store)
+            return
         }
-
+        guard let rootURL = controller.folderURL else { return }
+        if !rootScopeAccessed {
+            rootScopeAccessed = rootURL.startAccessingSecurityScopedResource()
+        }
         loadFiles(from: rootURL, into: store)
     }
 
@@ -168,6 +195,7 @@ final class ICloudFolderManager {
         atriaURL = url
         atriaAccessed = url.startAccessingSecurityScopedResource()
         folderDisplayName = url.deletingPathExtension().lastPathComponent
+        extractedAtriaDir = try? extractedDirectory(for: url)
     }
 
     private func clearAtriaBookmark() {
