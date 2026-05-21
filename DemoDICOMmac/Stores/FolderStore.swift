@@ -20,7 +20,7 @@ enum FolderCreationState: Equatable {
     var statusMessage: String? {
         switch self {
         case .idle:               return nil
-        case .ready(let url):     return "Folder created at \(url.path)"
+        case .ready(let url):     return "Package created at \(url.path)"
         case .error(let message): return message
         }
     }

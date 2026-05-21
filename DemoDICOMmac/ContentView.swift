@@ -44,7 +44,7 @@ struct ContentView: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         panel.prompt = "Choose"
-        panel.message = "Choose where to create the folder"
+        panel.message = "Choose where to create the .atria package"
         panel.directoryURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         guard panel.runModal() == .OK, let parent = panel.url else { return }
         store.createFolder(named: folderName, in: parent)

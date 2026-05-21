@@ -6,67 +6,88 @@
 import Foundation
 import ICloudFolderSync
 
-/// Manages a user-selected iCloud Drive folder that mirrors the structure
-/// created by the macOS companion app (one subfolder per exam category).
+/// Manages the user-selected iCloud Drive source for exam files.
 ///
-/// Call `start()` at app launch to restore any previously selected folder.
-/// Call `selectFolder(_:)` when the user picks a new folder.
-/// Call `loadAllFiles(into:)` to populate the store from the subfolder structure.
+/// Supports two source types:
+/// - A plain iCloud folder created before the .atria format (legacy).
+/// - An `.atria` package created by the macOS companion app.
+///
+/// Call `start()` at app launch to restore any previously selected source.
 @Observable
 @MainActor
 final class ICloudFolderManager {
 
     private let controller = SyncedFolderController()
 
-    /// Display name (last path component) of the currently selected folder, or `nil`.
     private(set) var folderDisplayName: String?
-
     var hasFolder: Bool { folderDisplayName != nil }
 
-    // Tracks whether we hold an open security-scoped access on the root folder.
-    // Kept open so that Task.detached imports inside AppStore can reach subfolders.
+    // Security-scoped access for the plain iCloud folder.
     private var rootScopeAccessed = false
+
+    // Security-scoped access and bookmark for .atria packages.
+    private var atriaURL: URL?
+    private var atriaAccessed = false
+    private static let atriaBookmarkKey = "atriaPackageBookmark"
 
     // MARK: - Lifecycle
 
-    /// Restores a previously selected folder from the persisted bookmark.
-    /// Call once at app launch.
     func start() {
         _ = try? controller.start()
-        folderDisplayName = controller.folderDisplayName
-        startRootAccess()
+        if let name = controller.folderDisplayName {
+            folderDisplayName = name
+            startRootAccess()
+        } else {
+            restoreAtriaBookmark()
+        }
     }
 
-    /// Saves and activates a newly chosen folder URL.
     func selectFolder(_ url: URL) throws {
+        stopAtriaAccess()
+        clearAtriaBookmark()
         stopRootAccess()
         try controller.selectFolder(url)
         folderDisplayName = controller.folderDisplayName
         startRootAccess()
     }
 
-    /// Removes the saved folder selection.
+    /// Opens an `.atria` package, persists a security-scoped bookmark, and loads
+    /// all exam files from its category subfolders into `store`.
+    func openAtriaPackage(_ url: URL, into store: AppStore) {
+        stopRootAccess()
+        controller.clearFolder()
+        stopAtriaAccess()
+        saveAtriaBookmark(url)
+        atriaURL = url
+        atriaAccessed = url.startAccessingSecurityScopedResource()
+        folderDisplayName = url.deletingPathExtension().lastPathComponent
+        loadFiles(from: url, into: store)
+    }
+
     func clearFolder() {
         stopRootAccess()
         controller.clearFolder()
+        stopAtriaAccess()
+        clearAtriaBookmark()
         folderDisplayName = nil
     }
 
     // MARK: - Loading
 
-    /// Reads every category subfolder in the selected iCloud folder and routes its
-    /// contents into `store`, mirroring the structure the macOS companion creates.
-    ///
-    /// DICOM subfolders (Echo / CT / Coro) → `store.importFolder(url:examType:)`
-    /// Document subfolders → the corresponding URL property on the store
     func loadAllFiles(into store: AppStore) {
-        guard let rootURL = controller.folderURL else { return }
+        let rootURL = atriaURL ?? controller.folderURL
+        guard let rootURL else { return }
 
-        // Ensure root is accessible for the detached import tasks in AppStore.
-        if !rootScopeAccessed {
-            rootScopeAccessed = rootURL.startAccessingSecurityScopedResource()
+        if atriaURL == nil, !rootScopeAccessed, let url = controller.folderURL {
+            rootScopeAccessed = url.startAccessingSecurityScopedResource()
         }
 
+        loadFiles(from: rootURL, into: store)
+    }
+
+    // MARK: - Private: loading
+
+    private func loadFiles(from rootURL: URL, into store: AppStore) {
         let fm = FileManager.default
 
         let dicomMappings: [(String, ExamType)] = [
@@ -94,7 +115,7 @@ final class ICloudFolderManager {
         }
     }
 
-    // MARK: - Private
+    // MARK: - Private: security-scoped access
 
     private func startRootAccess() {
         guard !rootScopeAccessed, let url = controller.folderURL else { return }
@@ -110,11 +131,51 @@ final class ICloudFolderManager {
         rootScopeAccessed = false
     }
 
-    /// Returns the folder that actually contains `.dcm` files for a given category.
-    ///
-    /// Doctors typically drop an entire scan folder into the companion app, so the
-    /// structure is `CT/ → OriginalFolder/ → *.dcm` rather than `CT/ → *.dcm`.
-    /// This method checks one level deep and returns whichever folder holds the files.
+    private func stopAtriaAccess() {
+        guard atriaAccessed, let url = atriaURL else {
+            atriaAccessed = false
+            atriaURL = nil
+            return
+        }
+        url.stopAccessingSecurityScopedResource()
+        atriaAccessed = false
+        atriaURL = nil
+    }
+
+    // MARK: - Private: .atria bookmark persistence
+
+    private func saveAtriaBookmark(_ url: URL) {
+        let data = try? url.bookmarkData(
+            options: [],
+            includingResourceValuesForKeys: nil,
+            relativeTo: nil
+        )
+        UserDefaults.standard.set(data, forKey: Self.atriaBookmarkKey)
+    }
+
+    private func restoreAtriaBookmark() {
+        guard let data = UserDefaults.standard.data(forKey: Self.atriaBookmarkKey) else { return }
+        var isStale = false
+        guard let url = try? URL(
+            resolvingBookmarkData: data,
+            options: [],
+            relativeTo: nil,
+            bookmarkDataIsStale: &isStale
+        ), !isStale else {
+            clearAtriaBookmark()
+            return
+        }
+        atriaURL = url
+        atriaAccessed = url.startAccessingSecurityScopedResource()
+        folderDisplayName = url.deletingPathExtension().lastPathComponent
+    }
+
+    private func clearAtriaBookmark() {
+        UserDefaults.standard.removeObject(forKey: Self.atriaBookmarkKey)
+    }
+
+    // MARK: - Private: folder scanning helpers
+
     private func resolvedDICOMFolder(under categoryURL: URL, using fm: FileManager) -> URL? {
         if containsDICOMFiles(at: categoryURL, using: fm) {
             return categoryURL
@@ -143,7 +204,6 @@ final class ICloudFolderManager {
         }
     }
 
-    /// Returns the first PDF or image file found in `folderURL`, sorted by name.
     private func firstSupportedFile(in folderURL: URL, using fm: FileManager) -> URL? {
         guard let contents = try? fm.contentsOfDirectory(
             at: folderURL,

@@ -18,7 +18,7 @@ struct SidePanel: View {
                     .padding(.top, 32)
                     .padding(.bottom, 10)
 
-                Text("Folder\nOrganizer")
+                Text("Package\nOrganizer")
                     .font(.system(size: 20, weight: .bold))
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 24)
@@ -55,7 +55,7 @@ struct SidePanel: View {
                 Button {
                     onCreateTapped()
                 } label: {
-                    Label("Create Folder", systemImage: "folder.badge.plus")
+                    Label("Create Package", systemImage: "folder.badge.plus")
                         .frame(maxWidth: .infinity)
                 }
                 .disabled(folderName.trimmingCharacters(in: .whitespaces).isEmpty || store.totalCount == 0)

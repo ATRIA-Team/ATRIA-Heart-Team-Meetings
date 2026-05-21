@@ -18,19 +18,37 @@ enum FolderOrganiserError: LocalizedError {
 actor FolderOrganiser: FolderOrganising {
 
     func createFolder(named name: String, in parent: URL, files: [Category: [URL]]) async throws -> URL {
-        let root = parent.appendingPathComponent(name, isDirectory: true)
+        let packageName = name.hasSuffix(".atria") ? name : "\(name).atria"
+        let root = parent.appendingPathComponent(packageName, isDirectory: true)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+
+        var manifestCategories: [String: [String]] = [:]
         for category in Category.allCases {
             let sub = root.appendingPathComponent(category.rawValue, isDirectory: true)
             try FileManager.default.createDirectory(at: sub, withIntermediateDirectories: true)
+            var filenames: [String] = []
             for src in files[category] ?? [] {
                 let dst = sub.appendingPathComponent(src.lastPathComponent)
                 if FileManager.default.fileExists(atPath: dst.path) {
                     try? FileManager.default.removeItem(at: dst)
                 }
                 try FileManager.default.copyItem(at: src, to: dst)
+                filenames.append(src.lastPathComponent)
             }
+            manifestCategories[category.rawValue] = filenames
         }
+
+        let manifest = AtriaManifest(
+            patientName: name,
+            createdAt: Date(),
+            categories: manifestCategories
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(manifest)
+        try data.write(to: root.appendingPathComponent("manifest.json"))
+
         return root
     }
 

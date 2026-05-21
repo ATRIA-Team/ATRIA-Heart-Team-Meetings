@@ -6,6 +6,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+extension UTType {
+    static let atriaPackage = UTType(importedAs: "com.atria-team.atria-package")
+}
+
 /// Pre-session lobby shown while a SharePlay session is active but not all
 /// participants have loaded their local DICOM folder yet.
 ///
@@ -20,7 +24,8 @@ struct LobbyView: View {
         case echo, ct, coro, medicalHistory, vitals, bloodTests, other, iCloudFolder
         var allowedTypes: [UTType] {
             switch self {
-            case .echo, .ct, .coro, .iCloudFolder: return [.folder]
+            case .echo, .ct, .coro: return [.folder]
+            case .iCloudFolder: return [.folder]
             case .medicalHistory, .bloodTests, .vitals, .other: return [.pdf, .image]
             }
         }
@@ -67,8 +72,12 @@ struct LobbyView: View {
             case .bloodTests:     store.addBloodTests(url)
             case .other:          store.addOther(url)
             case .iCloudFolder:
-                try? store.iCloud.selectFolder(url)
-                store.iCloud.loadAllFiles(into: store)
+                if url.pathExtension.lowercased() == "atria" {
+                    store.iCloud.openAtriaPackage(url, into: store)
+                } else {
+                    try? store.iCloud.selectFolder(url)
+                    store.iCloud.loadAllFiles(into: store)
+                }
             case nil:             break
             }
         }
@@ -274,7 +283,7 @@ struct LobbyView: View {
 
     private var iCloudSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("iCloud Folder", systemImage: "icloud.fill")
+            Label("Patient Package", systemImage: "icloud.fill")
                 .font(.headline)
 
             if store.iCloud.hasFolder {
@@ -287,7 +296,7 @@ struct LobbyView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(store.iCloud.folderDisplayName ?? "")
                             .font(.subheadline.weight(.medium))
-                        Text("Echo, CT, Coro and documents will be loaded from this folder")
+                        Text("Echo, CT, Coro and documents will be loaded from this package")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -325,13 +334,13 @@ struct LobbyView: View {
                     activePicker = .iCloudFolder
                     isPickerPresented = true
                 } label: {
-                    Label("Connect iCloud Folder", systemImage: "icloud.and.arrow.down")
+                    Label("Connect .atria Package", systemImage: "icloud.and.arrow.down")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
 
-                Text("Pick the folder created by the macOS companion app — all exam files will load automatically.")
+                Text("Pick the .atria package created by the macOS companion app — all exam files will load automatically.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
