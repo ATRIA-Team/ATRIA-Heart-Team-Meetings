@@ -9,9 +9,11 @@ import SwiftUI
 
 struct HomeView3: View {
     
+    @State private var isHovered = false
+    
     var body: some View {
         
-        ScrollView {
+        ZStack {
             
             VStack(alignment: .leading) {
                 
@@ -27,8 +29,9 @@ struct HomeView3: View {
                     VStack(alignment: .leading) {
                         Text("Pre - Op meeting")
                             .font(.title)
-                        Text("Description of the subtitle under the preop meeting text.")
-                            .font(.callout)
+                        Text("ATRIA is your companion for pre-operative meetings. Start a meeting to begin!")
+                            .font(.default)
+                            .fontWeight(.light)
                             .padding(.bottom)
                         Button {
                             
@@ -40,6 +43,7 @@ struct HomeView3: View {
                         }
                     }
                     .frame(width: 250)
+                    .padding(.leading, 75)
                     
                     Spacer()
                     
@@ -47,6 +51,37 @@ struct HomeView3: View {
                         .frame(width: 250, height: 150)
                 }
                 .padding(50)
+                
+                HStack(spacing: 30) {
+                    HomeActionButton(icon: "eye.circle.fill", text: "DICOM Viewer", width: 350, height: 200) {
+                        
+                    }
+                    
+                    HomeActionButton(icon: "document.on.document.fill", text: "Annotations", width: 350, height: 200) {
+                        
+                    }
+                }
+                .padding(50)
+            }
+            
+            VStack {
+                Spacer()
+                    .frame(height: 200)
+                
+                Image("Ellipse")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 1280, height: 240)
+                    .mask(
+                        LinearGradient(
+                            gradient: Gradient(stops: [
+                                .init(color: .black, location: 0.0),
+                                .init(color: .clear, location: 0.6)
+                            ]),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
             }
         }
     }
