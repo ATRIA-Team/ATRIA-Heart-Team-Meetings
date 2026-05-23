@@ -47,18 +47,17 @@ struct HomeView3: View {
                     
                     Spacer()
                     
-                    Rectangle()
+                    Image("atrialogo1")
+                        .padding(.trailing, 300)
                         .frame(width: 250, height: 150)
                 }
                 .padding(50)
                 
                 HStack(spacing: 30) {
                     HomeActionButton(icon: "eye.circle.fill", text: "DICOM Viewer", width: 350, height: 200) {
-                        
                     }
                     
                     HomeActionButton(icon: "document.on.document.fill", text: "Annotations", width: 350, height: 200) {
-                        
                     }
                 }
                 .padding(50)
@@ -66,7 +65,7 @@ struct HomeView3: View {
             
             VStack {
                 Spacer()
-                    .frame(height: 200)
+                    .frame(height: 250)
                 
                 Image("Ellipse")
                     .resizable()

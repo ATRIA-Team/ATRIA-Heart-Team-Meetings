@@ -81,7 +81,7 @@ struct RemoteControlsView: View {
                     systemImage: store.isDrawingActive ? "pencil.slash" : "pencil.and.outline"
                 )
             }
-            .tint(store.isDrawingActive ? .orange : .accentColor)
+            .tint(store.isDrawingActive ? .black.opacity(0.2) : .black.opacity(0.7))
             .buttonStyle(.bordered)
 
             Divider().frame(height: 28)
