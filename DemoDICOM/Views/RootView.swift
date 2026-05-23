@@ -24,7 +24,7 @@ struct RootView: View {
                     NavigationStack { LobbyView() }
                 }
             } else {
-                HomeView2()
+                HomeView3()
             }
         }
         .task {

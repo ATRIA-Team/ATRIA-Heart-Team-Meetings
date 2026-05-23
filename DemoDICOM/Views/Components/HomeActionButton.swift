@@ -38,6 +38,7 @@ struct HomeActionButton: View {
                             .padding(.horizontal, 20)
                             .padding(.bottom, 15)
                     }
+                    .allowsHitTesting(false)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)

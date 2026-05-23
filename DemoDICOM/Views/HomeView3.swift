@@ -6,86 +6,126 @@
 //
 
 import SwiftUI
+import GroupActivities
+import _GroupActivities_UIKit
 
 struct HomeView3: View {
-    
-    @State private var isHovered = false
-    
+
+    @Environment(AppStore.self) private var store
+
+    @State private var showShareSheet = false
+    @State private var showLobby = false
+    @State private var showDICOMViewer = false
+    @State private var showAnnotations = false
+
     var body: some View {
-        
-        ZStack {
-            
-            VStack(alignment: .leading) {
-                
-                HStack {
-                    Text("Welcome to ATRIA")
-                        .font(.largeTitle)
-                    
-                    Spacer()
-                }
-                .padding(50)
-                
-                HStack {
-                    VStack(alignment: .leading) {
-                        Text("Pre - Op meeting")
-                            .font(.title)
-                        Text("ATRIA is your companion for pre-operative meetings. Start a meeting to begin!")
-                            .font(.default)
-                            .fontWeight(.light)
-                            .padding(.bottom)
-                        Button {
-                            
-                        } label: {
-                            HStack {
-                                Image(systemName: "video.fill")
-                                Text("Start meeting")
+        NavigationStack {
+            ZStack {
+
+                VStack(alignment: .leading) {
+
+                    HStack {
+                        Text("Welcome to ATRIA")
+                            .font(.largeTitle)
+
+                        Spacer()
+                    }
+                    .padding(50)
+
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Pre - Op meeting")
+                                .font(.title)
+                            Text("ATRIA is your companion for pre-operative meetings. Start a meeting to begin!")
+                                .font(.default)
+                                .fontWeight(.light)
+                                .padding(.bottom)
+                            Button {
+                                showShareSheet = true
+                            } label: {
+                                HStack {
+                                    Image(systemName: "video.fill")
+                                    Text("Start meeting")
+                                }
+                            }
+                            .sheet(isPresented: $showShareSheet) {
+                                GroupActivitySharingSheet(activity: DICOMViewerActivity())
+                                    .ignoresSafeArea()
                             }
                         }
+                        .frame(width: 250)
+                        .padding(.leading, 75)
+
+                        Spacer()
+
+                        Image("atrialogo1")
+                            .padding(.trailing, 300)
+                            .frame(width: 250, height: 150)
                     }
-                    .frame(width: 250)
-                    .padding(.leading, 75)
-                    
+                    .padding(50)
+
+                    HStack(spacing: 30) {
+                        HomeActionButton(icon: "eye.circle.fill", text: "DICOM Viewer", width: 350, height: 200) {
+                            showDICOMViewer = true
+                        }
+
+                        HomeActionButton(icon: "document.on.document.fill", text: "Annotations", width: 350, height: 200) {
+                            showAnnotations = true
+                        }
+                    }
+                    .padding(50)
+                }
+
+                VStack {
                     Spacer()
-                    
-                    Image("atrialogo1")
-                        .padding(.trailing, 300)
-                        .frame(width: 250, height: 150)
-                }
-                .padding(50)
-                
-                HStack(spacing: 30) {
-                    HomeActionButton(icon: "eye.circle.fill", text: "DICOM Viewer", width: 350, height: 200) {
-                    }
-                    
-                    HomeActionButton(icon: "document.on.document.fill", text: "Annotations", width: 350, height: 200) {
-                    }
-                }
-                .padding(50)
-            }
-            
-            VStack {
-                Spacer()
-                    .frame(height: 250)
-                
-                Image("Ellipse")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 1280, height: 240)
-                    .mask(
-                        LinearGradient(
-                            gradient: Gradient(stops: [
-                                .init(color: .black, location: 0.0),
-                                .init(color: .clear, location: 0.6)
-                            ]),
-                            startPoint: .top,
-                            endPoint: .bottom
+                        .frame(height: 250)
+
+                    Image("Ellipse")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 1280, height: 240)
+                        .mask(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .black, location: 0.0),
+                                    .init(color: .clear, location: 0.6)
+                                ]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
                         )
-                    )
+                }
+                .allowsHitTesting(false)
+            }
+            .onChange(of: store.session.isInSession) { _, isInSession in
+                if isInSession { showLobby = true }
+            }
+            .navigationDestination(isPresented: $showLobby) {
+                LobbyView2()
+            }
+            .navigationDestination(isPresented: $showDICOMViewer) {
+                ContentView()
+            }
+            .navigationDestination(isPresented: $showAnnotations) {
+                SavedAnnotationsView()
             }
         }
     }
 }
 
+// MARK: - GroupActivitySharingSheet
+
+private struct GroupActivitySharingSheet<Activity: GroupActivity>: UIViewControllerRepresentable {
+    let activity: Activity
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        (try? GroupActivitySharingController(activity)) ?? UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
 #Preview(windowStyle: .automatic) {
     HomeView3()
+        .environment(AppStore())
 }

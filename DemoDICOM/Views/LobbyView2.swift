@@ -6,6 +6,11 @@
 //
 
 import SwiftUI
+import GroupActivities
+import UniformTypeIdentifiers
+import _GroupActivities_UIKit
+
+// MARK: - Category metadata
 
 private struct CategoryInfo {
     let icon: String
@@ -22,18 +27,94 @@ private let lobbyCategories: [CategoryInfo] = [
     CategoryInfo(icon: "heart.text.clipboard.fill",  name: "Other")
 ]
 
+// MARK: - File item model
+
+private struct FileItem: Identifiable {
+    let id = UUID()
+    let name: String
+    let removeAction: () -> Void
+}
+
+// MARK: - LobbyView2
+
 struct LobbyView2: View {
 
-    @State private var uploadedFiles: [String: [String]]
+    @Environment(AppStore.self) private var store
 
-    init(uploadedFiles: [String: [String]] = [:]) {
-        let defaults = Dictionary(uniqueKeysWithValues: lobbyCategories.map { ($0.name, [String]()) })
-        self._uploadedFiles = State(initialValue: defaults.merging(uploadedFiles) { _, new in new })
+    private enum ActivePicker {
+        case atriaPackage
+        case medicalHistory, vitals, bloodTests, other   // PDF / image
+        case echo, ct, coro                              // DICOM folder
+
+        var allowedTypes: [UTType] {
+            switch self {
+            case .atriaPackage:                     return [.atriaPackage]
+            case .medicalHistory, .vitals,
+                 .bloodTests, .other:               return [.pdf, .image]
+            case .echo, .ct, .coro:                 return [.folder]
+            }
+        }
     }
+
+    @State private var activePicker: ActivePicker? = nil
+    @State private var isPickerPresented = false
+    @State private var showShareSheet = false
+
+    // MARK: - Computed file items from store
+
+    private func fileItems(for category: String) -> [FileItem] {
+        switch category {
+        case "Medical History":
+            return store.document.medicalHistoryURLs.map { url in
+                FileItem(name: url.lastPathComponent) { store.removeMedicalHistory(url) }
+            }
+        case "Vitals":
+            return store.document.vitalsURLs.map { url in
+                FileItem(name: url.lastPathComponent) { store.removeVitals(url) }
+            }
+        case "Blood Tests":
+            return store.document.bloodTestURLs.map { url in
+                FileItem(name: url.lastPathComponent) { store.removeBloodTests(url) }
+            }
+        case "Other":
+            return store.document.otherFileURLs.map { url in
+                FileItem(name: url.lastPathComponent) { store.removeOther(url) }
+            }
+        case "Echo":
+            return (store.viewer.dicomExams[.echo] ?? []).map { bundle in
+                let displayName = bundle.seriesDescription.isEmpty
+                    ? "Echo · \(bundle.sliceCount) slices"
+                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
+                let bundleID = bundle.id
+                return FileItem(name: displayName) { store.removeBundle(id: bundleID, examType: .echo) }
+            }
+        case "CT":
+            return (store.viewer.dicomExams[.ct] ?? []).map { bundle in
+                let displayName = bundle.seriesDescription.isEmpty
+                    ? "CT · \(bundle.sliceCount) slices"
+                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
+                let bundleID = bundle.id
+                return FileItem(name: displayName) { store.removeBundle(id: bundleID, examType: .ct) }
+            }
+        case "Coro":
+            return (store.viewer.dicomExams[.coro] ?? []).map { bundle in
+                let displayName = bundle.seriesDescription.isEmpty
+                    ? "Coro · \(bundle.sliceCount) slices"
+                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
+                let bundleID = bundle.id
+                return FileItem(name: displayName) { store.removeBundle(id: bundleID, examType: .coro) }
+            }
+        default:
+            return []
+        }
+    }
+
+    // MARK: - Body
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
+
                 HStack {
                     Image("atrialogo1")
                         .resizable()
@@ -49,8 +130,9 @@ struct LobbyView2: View {
                     Spacer()
                 }
 
-                PreLobbyButton(icon: "drop", text: "Blood Tests", width: 350, height: 200) {
-
+                PreLobbyButton(icon: "icloud.and.arrow.down", text: "Load .atria Package", width: 350, height: 200) {
+                    activePicker = .atriaPackage
+                    isPickerPresented = true
                 }
                 .padding(.bottom, 40)
 
@@ -59,21 +141,114 @@ struct LobbyView2: View {
 
                 ScrollView(.horizontal) {
                     HStack(spacing: 25) {
-                        PreLobbyButton(icon: "list.bullet.clipboard.fill", text: "Medical History", width: 350, height: 200) {}
-                        PreLobbyButton(icon: "stethoscope",                text: "Vitals",          width: 350, height: 200) {}
-                        PreLobbyButton(icon: "drop.fill",                  text: "Blood Tests",     width: 350, height: 200) {}
-                        PreLobbyButton(icon: "waveform.path.ecg.text.clipboard.fill", text: "Echo", width: 350, height: 200) {}
-                        PreLobbyButton(icon: "waveform.path.ecg.rectangle.fill",      text: "CT",   width: 350, height: 200) {}
-                        PreLobbyButton(icon: "heart.fill",                 text: "Coro",            width: 350, height: 200) {}
-                        PreLobbyButton(icon: "heart.text.clipboard.fill",  text: "Other",           width: 350, height: 200) {}
+                        PreLobbyButton(icon: "list.bullet.clipboard.fill", text: "Medical History", width: 350, height: 200) {
+                            activePicker = .medicalHistory
+                            isPickerPresented = true
+                        }
+                        PreLobbyButton(icon: "stethoscope", text: "Vitals", width: 350, height: 200) {
+                            activePicker = .vitals
+                            isPickerPresented = true
+                        }
+                        PreLobbyButton(icon: "drop.fill", text: "Blood Tests", width: 350, height: 200) {
+                            activePicker = .bloodTests
+                            isPickerPresented = true
+                        }
+                        PreLobbyButton(icon: "waveform.path.ecg.text.clipboard.fill", text: "Echo", width: 350, height: 200) {
+                            activePicker = .echo
+                            isPickerPresented = true
+                        }
+                        PreLobbyButton(icon: "waveform.path.ecg.rectangle.fill", text: "CT", width: 350, height: 200) {
+                            activePicker = .ct
+                            isPickerPresented = true
+                        }
+                        PreLobbyButton(icon: "heart.fill", text: "Coro", width: 350, height: 200) {
+                            activePicker = .coro
+                            isPickerPresented = true
+                        }
+                        PreLobbyButton(icon: "heart.text.clipboard.fill", text: "Other", width: 350, height: 200) {
+                            activePicker = .other
+                            isPickerPresented = true
+                        }
                     }
                 }
 
-                FilesUploadedPanel(uploadedFiles: $uploadedFiles)
+                FilesUploadedPanel(fileItems: fileItems)
+
+                HStack {
+                    Spacer()
+                    Button {
+                        if !store.session.isInSession {
+                            showShareSheet = true
+                        }
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: store.session.isInSession ? "shareplay" : "video.fill")
+                            Text(store.session.isInSession
+                                 ? "\(store.session.participantCount) in session"
+                                 : "Start meeting")
+                        }
+                        .font(.title3.weight(.semibold))
+                        .padding(.horizontal, 32)
+                        .padding(.vertical, 16)
+                    }
+                    .sheet(isPresented: $showShareSheet) {
+                        GroupActivitySharingSheet(activity: DICOMViewerActivity())
+                            .ignoresSafeArea()
+                    }
+                    Spacer()
+                }
+                .padding(.top, 20)
 
                 Spacer()
             }
             .padding(50)
+        }
+        .fileImporter(
+            isPresented: $isPickerPresented,
+            allowedContentTypes: activePicker?.allowedTypes ?? [.folder],
+            allowsMultipleSelection: false
+        ) { result in
+            defer { activePicker = nil }
+            guard case .success(let urls) = result, let url = urls.first else { return }
+            switch activePicker {
+            case .atriaPackage:   store.iCloud.openAtriaPackage(url, into: store)
+            case .medicalHistory: store.addMedicalHistory(url)
+            case .vitals:         store.addVitals(url)
+            case .bloodTests:     store.addBloodTests(url)
+            case .other:          store.addOther(url)
+            case .echo:           store.importFolder(url: url, examType: .echo)
+            case .ct:             store.importFolder(url: url, examType: .ct)
+            case .coro:           store.importFolder(url: url, examType: .coro)
+            case nil:             break
+            }
+        }
+        .overlay {
+            if store.viewer.isLoading { loadingOverlay }
+        }
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { store.viewer.errorMessage != nil },
+                set: { if !$0 { store.viewer.errorMessage = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.viewer.errorMessage ?? "")
+        }
+    }
+
+    // MARK: - Loading overlay
+
+    private var loadingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.3).ignoresSafeArea()
+            VStack(spacing: 16) {
+                ProgressView().scaleEffect(1.5)
+                Text("Loading DICOM slices…").font(.headline)
+            }
+            .padding(32)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 }
@@ -81,7 +256,7 @@ struct LobbyView2: View {
 // MARK: - Files uploaded panel
 
 private struct FilesUploadedPanel: View {
-    @Binding var uploadedFiles: [String: [String]]
+    let fileItems: (String) -> [FileItem]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -94,10 +269,7 @@ private struct FilesUploadedPanel: View {
                 CategoryRow(
                     icon: category.icon,
                     name: category.name,
-                    files: Binding(
-                        get: { uploadedFiles[category.name] ?? [] },
-                        set: { uploadedFiles[category.name] = $0 }
-                    )
+                    files: fileItems(category.name)
                 )
 
                 if category.name != lobbyCategories.last?.name {
@@ -129,7 +301,7 @@ private struct FilesUploadedPanel: View {
 private struct CategoryRow: View {
     let icon: String
     let name: String
-    @Binding var files: [String]
+    let files: [FileItem]
     @State private var isExpanded = true
 
     var body: some View {
@@ -157,10 +329,8 @@ private struct CategoryRow: View {
 
             if isExpanded && !files.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
-                    ForEach(files, id: \.self) { file in
-                        FileRow(fileName: file) {
-                            withAnimation { files.removeAll { $0 == file } }
-                        }
+                    ForEach(files) { file in
+                        FileRow(fileName: file.name, onRemove: file.removeAction)
                     }
                 }
                 .padding(.top, 6)
@@ -200,14 +370,19 @@ private struct FileRow: View {
     }
 }
 
-#Preview(windowStyle: .automatic) {
-    LobbyView2(uploadedFiles: [
-        "Medical History": ["patient_history_2024.pdf", "surgery_notes_2023.pdf"],
-        "Vitals":          ["vitals_admission.pdf"],
-        "Blood Tests":     ["CBC_march_2024.dcm", "lipid_panel.dcm", "metabolic_panel.dcm"],
-        "Echo":            ["echo_apical4ch.dcm", "echo_parasternal.dcm"],
-        "CT":              [],
-        "Coro":            ["coro_lad_stenosis.dcm"],
-        "Other":           []
-    ])
+// MARK: - GroupActivitySharingSheet
+
+private struct GroupActivitySharingSheet<Activity: GroupActivity>: UIViewControllerRepresentable {
+    let activity: Activity
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        (try? GroupActivitySharingController(activity)) ?? UIViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+#Preview {
+    LobbyView2()
+        .environment(AppStore())
 }
