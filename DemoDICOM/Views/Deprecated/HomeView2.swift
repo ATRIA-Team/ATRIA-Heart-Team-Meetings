@@ -9,7 +9,7 @@ import SwiftUI
 import GroupActivities
 import _GroupActivities_UIKit
 
-struct HomeView2: View {
+struct DeprecatedHomeView2: View {
 
     @Environment(AppStore.self) private var store
 
@@ -103,7 +103,7 @@ struct HomeView2: View {
             }
         }
         .navigationDestination(isPresented: $showLobby) {
-            LobbyView()
+            DeprecatedLobbyView()
         }
         .navigationDestination(isPresented: $showCaptures) {
             SavedAnnotationsView()
@@ -131,5 +131,5 @@ private struct GroupActivitySharingSheet<Activity: GroupActivity>: UIViewControl
 }
 
 #Preview(windowStyle: .automatic) {
-    HomeView2()
+    DeprecatedHomeView2()
 }

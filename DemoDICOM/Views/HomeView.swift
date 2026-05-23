@@ -1,5 +1,5 @@
 //
-//  HomeView3.swift
+//  HomeView.swift
 //  DemoDICOM
 //
 //  Created by Igor Tarantino on 21/05/2026.
@@ -9,7 +9,7 @@ import SwiftUI
 import GroupActivities
 import _GroupActivities_UIKit
 
-struct HomeView3: View {
+struct HomeView: View {
 
     @Environment(AppStore.self) private var store
 
@@ -106,7 +106,7 @@ struct HomeView3: View {
                 if isInSession { showLobby = true }
             }
             .navigationDestination(isPresented: $showLobby) {
-                LobbyView2()
+                LobbyView()
             }
             .navigationDestination(isPresented: $showDICOMViewer) {
                 ContentView()
@@ -134,6 +134,6 @@ private struct GroupActivitySharingSheet<Activity: GroupActivity>: UIViewControl
 }
 
 #Preview(windowStyle: .automatic) {
-    HomeView3()
+    HomeView()
         .environment(AppStore())
 }
