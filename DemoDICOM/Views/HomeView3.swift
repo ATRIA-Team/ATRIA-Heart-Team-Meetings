@@ -17,6 +17,7 @@ struct HomeView3: View {
     @State private var showLobby = false
     @State private var showDICOMViewer = false
     @State private var showAnnotations = false
+    @State private var showDisclaimer = false
 
     var body: some View {
         NavigationStack {
@@ -72,6 +73,10 @@ struct HomeView3: View {
                         HomeActionButton(icon: "document.on.document.fill", text: "Annotations", width: 350, height: 200) {
                             showAnnotations = true
                         }
+
+                        HomeActionButton(icon: "doc.text.fill", text: "Disclaimer", width: 350, height: 200) {
+                            showDisclaimer = true
+                        }
                     }
                     .padding(50)
                 }
@@ -108,6 +113,9 @@ struct HomeView3: View {
             }
             .navigationDestination(isPresented: $showAnnotations) {
                 SavedAnnotationsView()
+            }
+            .navigationDestination(isPresented: $showDisclaimer) {
+                DisclaimerView()
             }
         }
     }
