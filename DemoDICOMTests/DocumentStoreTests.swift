@@ -85,6 +85,62 @@ struct DocumentStoreTests {
         #expect(store.otherFileURLs.contains(urlA))
     }
 
+    // MARK: - removeVitals / removeBloodTests / removeOther
+
+    @Test("removeVitals removes the specified URL")
+    func removeVitals() {
+        let store = DocumentStore()
+        store.addVitals(urlA)
+        store.addVitals(urlB)
+        store.removeVitals(urlA)
+        #expect(!store.vitalsURLs.contains(urlA))
+        #expect(store.vitalsURLs.contains(urlB))
+    }
+
+    @Test("removeVitals leaves the list empty when the last URL is removed")
+    func removeVitalsLast() {
+        let store = DocumentStore()
+        store.addVitals(urlA)
+        store.removeVitals(urlA)
+        #expect(store.vitalsURLs.isEmpty)
+    }
+
+    @Test("removeBloodTests removes the specified URL")
+    func removeBloodTests() {
+        let store = DocumentStore()
+        store.addBloodTests(urlA)
+        store.addBloodTests(urlB)
+        store.removeBloodTests(urlA)
+        #expect(!store.bloodTestURLs.contains(urlA))
+        #expect(store.bloodTestURLs.contains(urlB))
+    }
+
+    @Test("removeBloodTests leaves the list empty when the last URL is removed")
+    func removeBloodTestsLast() {
+        let store = DocumentStore()
+        store.addBloodTests(urlA)
+        store.removeBloodTests(urlA)
+        #expect(store.bloodTestURLs.isEmpty)
+    }
+
+    @Test("removeOther removes the specified URL")
+    func removeOther() {
+        let store = DocumentStore()
+        store.addOther(urlA)
+        store.addOther(urlB)
+        store.removeOther(urlA)
+        #expect(!store.otherFileURLs.contains(urlA))
+        #expect(store.otherFileURLs.contains(urlB))
+    }
+
+    @Test("removeOther leaves the list empty when the last URL is removed")
+    func removeOtherLast() {
+        let store = DocumentStore()
+        store.addOther(urlA)
+        store.removeOther(urlA)
+        #expect(store.otherFileURLs.isEmpty)
+    }
+
     // MARK: - documentURLs(for:)
 
     @Test("documentURLs returns all URLs for each document exam type")

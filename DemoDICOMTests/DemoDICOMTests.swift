@@ -2,15 +2,7 @@
 //  DemoDICOMTests.swift
 //  DemoDICOMTests
 //
-//  Created by Igor Tarantino on 19/05/2026.
+//  Xcode-generated placeholder — all tests live in per-suite files
+//  (ViewerStoreTests, SessionStoreTests, AnnotationStoreTests,
+//   DocumentStoreTests, DrawingStoreTests, AppStoreTests).
 //
-
-import Testing
-
-struct DemoDICOMTests {
-
-    @Test func example() async throws {
-        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    }
-
-}
