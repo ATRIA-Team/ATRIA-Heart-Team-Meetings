@@ -38,30 +38,41 @@ private struct FileItem: Identifiable {
 // MARK: - LobbyView
 
 struct LobbyView: View {
-
+    
     @Environment(AppStore.self) private var store
-
+    
     private enum ActivePicker {
         case atriaPackage
         case medicalHistory, vitals, bloodTests, other   // PDF / image
         case echo, ct, coro                              // DICOM folder
-
+        
         var allowedTypes: [UTType] {
             switch self {
             case .atriaPackage:                     return [.atriaPackage]
             case .medicalHistory, .vitals,
-                 .bloodTests, .other:               return [.pdf, .image]
+                    .bloodTests, .other:               return [.pdf, .image]
             case .echo, .ct, .coro:                 return [.folder]
             }
         }
     }
-
+    
     @State private var activePicker: ActivePicker? = nil
     @State private var isPickerPresented = false
     @State private var showShareSheet = false
-
+    
+    // MARK: - Atria button state
+    
+    private var atriaButtonState: AtriaPackageButtonState {
+        guard store.iCloud.hasFolder else { return .waiting }
+        let readyCounts = store.session.participantStates.values
+            .filter { $0.isReady }
+            .map { $0.sliceCount }
+        guard readyCounts.count >= 2 else { return .uploaded }
+        return Set(readyCounts).count > 1 ? .mismatch : .uploaded
+    }
+    
     // MARK: - Computed file items from store
-
+    
     private func fileItems(for category: String) -> [FileItem] {
         switch category {
         case "Medical History":
@@ -83,24 +94,24 @@ struct LobbyView: View {
         case "Echo":
             return (store.viewer.dicomExams[.echo] ?? []).map { bundle in
                 let displayName = bundle.seriesDescription.isEmpty
-                    ? "Echo · \(bundle.sliceCount) slices"
-                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
+                ? "Echo · \(bundle.sliceCount) slices"
+                : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
                 let bundleID = bundle.id
                 return FileItem(name: displayName) { store.removeBundle(id: bundleID, examType: .echo) }
             }
         case "CT":
             return (store.viewer.dicomExams[.ct] ?? []).map { bundle in
                 let displayName = bundle.seriesDescription.isEmpty
-                    ? "CT · \(bundle.sliceCount) slices"
-                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
+                ? "CT · \(bundle.sliceCount) slices"
+                : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
                 let bundleID = bundle.id
                 return FileItem(name: displayName) { store.removeBundle(id: bundleID, examType: .ct) }
             }
         case "Coro":
             return (store.viewer.dicomExams[.coro] ?? []).map { bundle in
                 let displayName = bundle.seriesDescription.isEmpty
-                    ? "Coro · \(bundle.sliceCount) slices"
-                    : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
+                ? "Coro · \(bundle.sliceCount) slices"
+                : "\(bundle.seriesDescription) · \(bundle.sliceCount) slices"
                 let bundleID = bundle.id
                 return FileItem(name: displayName) { store.removeBundle(id: bundleID, examType: .coro) }
             }
@@ -108,13 +119,13 @@ struct LobbyView: View {
             return []
         }
     }
-
+    
     // MARK: - Body
-
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 25) {
-
+                
                 HStack {
                     Image("atrialogo1")
                         .resizable()
@@ -123,22 +134,87 @@ struct LobbyView: View {
                         .font(.extraLargeTitle)
                     Spacer()
                 }
-
+                
                 HStack {
                     Text("Upload files from ATRIA companion app")
                         .font(.title)
                     Spacer()
                 }
-
-                PreLobbyButton(icon: "icloud.and.arrow.down", text: "Load .atria Package", width: 350, height: 200) {
-                    activePicker = .atriaPackage
-                    isPickerPresented = true
+                
+                HStack {
+                    
+                    AtriaPackageButton(state: atriaButtonState) {
+                        activePicker = .atriaPackage
+                        isPickerPresented = true
+                    }
+                    .padding(.bottom, 40)
+                    
+                    Button {
+                        store.iCloud.loadAllFiles(into: store)
+                    } label: {
+                        Image(systemName: "arrow.trianglehead.2.clockwise")
+                            .font(.system(size: 25))
+                    }
+                    .buttonBorderShape(.circle)
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.4), .white.opacity(0.05)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.4
+                            )
+                    )
+                    .padding(.leading, 10)
+                    .padding(.top, 110)
+                    
+                    Spacer()
+                    
+                    VStack {
+                        
+                        Text("Start meeting after uploading all the necessary files")
+                            .font(.largeTitle)
+                            .frame(width: 300)
+                        
+                        Button {
+                            if !store.session.isInSession {
+                                showShareSheet = true
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: store.session.isInSession ? "shareplay" : "video.fill")
+                                Text(store.session.isInSession
+                                     ? "\(store.session.participantCount) in session"
+                                     : "Start meeting")
+                            }
+                            .font(.title3.weight(.semibold))
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 16)
+                        }
+                        .overlay(
+                            Capsule()
+                                .inset(by: 0.7)
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.4), .white.opacity(0.05)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1.4
+                                )
+                        )
+                        .sheet(isPresented: $showShareSheet) {
+                            GroupActivitySharingSheet(activity: DICOMViewerActivity())
+                                .ignoresSafeArea()
+                        }
+                    }
                 }
-                .padding(.bottom, 40)
-
+                
                 Text("Upload files manually")
                     .font(.title)
-
+                
                 ScrollView(.horizontal) {
                     HStack(spacing: 25) {
                         PreLobbyButton(icon: "list.bullet.clipboard.fill", text: "Medical History", width: 350, height: 200) {
@@ -171,34 +247,9 @@ struct LobbyView: View {
                         }
                     }
                 }
-
+                
                 FilesUploadedPanel(fileItems: fileItems)
-
-                HStack {
-                    Spacer()
-                    Button {
-                        if !store.session.isInSession {
-                            showShareSheet = true
-                        }
-                    } label: {
-                        HStack(spacing: 10) {
-                            Image(systemName: store.session.isInSession ? "shareplay" : "video.fill")
-                            Text(store.session.isInSession
-                                 ? "\(store.session.participantCount) in session"
-                                 : "Start meeting")
-                        }
-                        .font(.title3.weight(.semibold))
-                        .padding(.horizontal, 32)
-                        .padding(.vertical, 16)
-                    }
-                    .sheet(isPresented: $showShareSheet) {
-                        GroupActivitySharingSheet(activity: DICOMViewerActivity())
-                            .ignoresSafeArea()
-                    }
-                    Spacer()
-                }
-                .padding(.top, 20)
-
+                
                 Spacer()
             }
             .padding(50)
@@ -237,9 +288,9 @@ struct LobbyView: View {
             Text(store.viewer.errorMessage ?? "")
         }
     }
-
+    
     // MARK: - Loading overlay
-
+    
     private var loadingOverlay: some View {
         ZStack {
             Color.black.opacity(0.3).ignoresSafeArea()
@@ -257,21 +308,21 @@ struct LobbyView: View {
 
 private struct FilesUploadedPanel: View {
     let fileItems: (String) -> [FileItem]
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Files uploaded")
                 .font(.title2)
                 .fontWeight(.bold)
                 .padding(.bottom, 20)
-
+            
             ForEach(lobbyCategories, id: \.name) { category in
                 CategoryRow(
                     icon: category.icon,
                     name: category.name,
                     files: fileItems(category.name)
                 )
-
+                
                 if category.name != lobbyCategories.last?.name {
                     Divider()
                         .padding(.vertical, 10)
@@ -303,7 +354,7 @@ private struct CategoryRow: View {
     let name: String
     let files: [FileItem]
     @State private var isExpanded = true
-
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
@@ -326,7 +377,7 @@ private struct CategoryRow: View {
                 guard !files.isEmpty else { return }
                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
             }
-
+            
             if isExpanded && !files.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(files) { file in
@@ -344,21 +395,21 @@ private struct CategoryRow: View {
 private struct FileRow: View {
     let fileName: String
     let onRemove: () -> Void
-
+    
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "doc.fill")
                 .padding(.leading, 30)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
+            
             Text(fileName)
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-
+            
             Spacer()
-
+            
             Button(action: onRemove) {
                 Image(systemName: "x.circle.fill")
                     .font(.caption.weight(.semibold))
@@ -374,15 +425,15 @@ private struct FileRow: View {
 
 private struct GroupActivitySharingSheet<Activity: GroupActivity>: UIViewControllerRepresentable {
     let activity: Activity
-
+    
     func makeUIViewController(context: Context) -> UIViewController {
         (try? GroupActivitySharingController(activity)) ?? UIViewController()
     }
-
+    
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
 
-#Preview {
+#Preview(windowStyle: .automatic) {
     LobbyView()
         .environment(AppStore())
 }

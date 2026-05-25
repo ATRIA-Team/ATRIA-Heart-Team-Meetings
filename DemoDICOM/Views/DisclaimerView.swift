@@ -89,7 +89,7 @@ struct DisclaimerView: View {
             Text("Insert here all the citations")
             
             Button {
-                
+
             } label: {
                 Rectangle()
                   .foregroundColor(.clear)
@@ -107,12 +107,19 @@ struct DisclaimerView: View {
                   .cornerRadius(20)
                   .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 2)
                   .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                      .inset(by: 0.7)
-                      .stroke(.white.opacity(0.4), lineWidth: 1.4)
+                      RoundedRectangle(cornerRadius: 20)
+                          .inset(by: 0.7)
+                          .stroke(
+                              LinearGradient(
+                                  colors: [.white.opacity(0.4), .white.opacity(0.05)],
+                                  startPoint: .topLeading,
+                                  endPoint: .bottomTrailing
+                              ),
+                              lineWidth: 1.4
+                          )
                   )
-                  .blur(radius: 50)
             }
+            .buttonStyle(.plain)
             
             Spacer()
         }
