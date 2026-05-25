@@ -40,18 +40,19 @@ struct HomeActionButton: View {
                     }
                     .allowsHitTesting(false)
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .inset(by: 0.7)
-                        .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.4
-                        )
-                )
+                .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
+//                .overlay(
+//                    RoundedRectangle(cornerRadius: 20)
+//                        .inset(by: 0.7)
+//                        .stroke(
+//                            LinearGradient(
+//                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
+//                                startPoint: .topLeading,
+//                                endPoint: .bottomTrailing
+//                            ),
+//                            lineWidth: 1.4
+//                        )
+//                )
                 .overlay(
                     Group {
                         if isHovered {

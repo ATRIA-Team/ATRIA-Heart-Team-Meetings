@@ -24,7 +24,7 @@ struct AtriaPackageButton: View {
             action()
         } label: {
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.5, green: 0.5, blue: 0.5).opacity(1))
+                .fill(Color.clear)
                 .frame(width: 350, height: 200)
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 2)
                 .overlay(
@@ -37,20 +37,10 @@ struct AtriaPackageButton: View {
 
                         VStack {
                             Spacer()
-                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 10, bottomLeading: 20, bottomTrailing: 20, topTrailing: 10))
-                                .frame(height: 55)
-                                .foregroundStyle(Color.gray)
-                                .overlay(
-                                    UnevenRoundedRectangle(cornerRadii: .init(topLeading: 10, bottomLeading: 20, bottomTrailing: 20, topTrailing: 10))
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [.white.opacity(0.3), .white.opacity(0.1)],
-                                                startPoint: .topLeading,
-                                                endPoint: .topTrailing
-                                            ),
-                                            lineWidth: 1.4
-                                        )
-                                )
+                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8))
+                                .frame(height: 50)
+                                .foregroundStyle(Color.Resolved(red: 0.8, green: 0.8, blue: 0.8).opacity(0.3))
+                                .glassBackgroundEffect(in: UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8)))
                         }
 
                         Text("Load .atria Package")
@@ -66,29 +56,17 @@ struct AtriaPackageButton: View {
                         }
                     }
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .inset(by: 0.7)
-                        .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.4
-                        )
-                )
+                .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
                 .overlay(
                     Group {
                         if isHovered {
-                            RoundedRectangle(cornerRadius: 20)
+                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8))
                                 .fill(Color.white.opacity(0.15))
                         }
                     }
                 )
         }
         .frame(width: 350, height: 200)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
         .buttonBorderShape(.roundedRectangle(radius: 20))
         .onHover { isHovered = $0 }
     }
@@ -117,7 +95,7 @@ struct AtriaPackageButton: View {
 
                 Image(systemName: state == .uploaded ? "checkmark" : "exclamationmark.triangle")
                     .foregroundStyle(state == .uploaded ? Color.green : Color.yellow)
-                    .font(.system(size: 17, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
             }
         }
     }
