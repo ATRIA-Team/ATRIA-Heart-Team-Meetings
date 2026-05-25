@@ -172,10 +172,11 @@ struct LobbyView: View {
                     
                     Spacer()
                     
-                    VStack {
+                    VStack(alignment: .trailing) {
                         
                         Text("Start meeting after uploading all the necessary files")
                             .font(.largeTitle)
+                            .multilineTextAlignment(.trailing)
                             .frame(width: 300)
                         
                         Button {
@@ -183,28 +184,16 @@ struct LobbyView: View {
                                 showShareSheet = true
                             }
                         } label: {
-                            HStack(spacing: 10) {
-                                Image(systemName: store.session.isInSession ? "shareplay" : "video.fill")
-                                Text(store.session.isInSession
-                                     ? "\(store.session.participantCount) in session"
-                                     : "Start meeting")
-                            }
-                            .font(.title3.weight(.semibold))
-                            .padding(.horizontal, 32)
-                            .padding(.vertical, 16)
+                            Text("Start")
+                                .font(.system(size: 25, weight: .bold))
+                                .frame(width: 150, height: 15)
+                                .padding()
                         }
-                        .overlay(
-                            Capsule()
-                                .inset(by: 0.7)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.white.opacity(0.4), .white.opacity(0.05)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.4
-                                )
-                        )
+                        .background(LinearGradient(colors: [Color.black.opacity(0.3), Color.black.opacity(0.1)], startPoint: .bottom, endPoint: .top))
+                        .clipShape(Capsule())
+                        .buttonStyle(.plain)
+                        .glassBackgroundEffect()
+                        .padding(.trailing, 25)
                         .sheet(isPresented: $showShareSheet) {
                             GroupActivitySharingSheet(activity: DICOMViewerActivity())
                                 .ignoresSafeArea()

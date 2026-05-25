@@ -34,20 +34,21 @@ struct PreLobbyButton: View {
 
                         VStack {
                             Spacer()
-                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 10, bottomLeading: 20, bottomTrailing: 20, topTrailing: 10))
-                                .frame(height: 55)
-                                .foregroundStyle(Color.gray)
-                                .overlay(
-                                    UnevenRoundedRectangle(cornerRadii: .init(topLeading: 10, bottomLeading: 20, bottomTrailing: 20, topTrailing: 10))
-                                        .stroke(
-                                            LinearGradient(
-                                                colors: [.white.opacity(0.3), .white.opacity(0.3)],
-                                                startPoint: .topLeading,
-                                                endPoint: .topTrailing
-                                            ),
-                                            lineWidth: 1.4
-                                        )
-                                )
+                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8))
+                                .frame(height: 50)
+                                .foregroundStyle(Color.Resolved(red: 0.8, green: 0.8, blue: 0.8).opacity(0.3))
+                                .glassBackgroundEffect(in: UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8)))
+//                                .overlay(
+//                                    UnevenRoundedRectangle(cornerRadii: .init(topLeading: 10, bottomLeading: 20, bottomTrailing: 20, topTrailing: 10))
+//                                        .stroke(
+//                                            LinearGradient(
+//                                                colors: [.white.opacity(0.3), .white.opacity(0.3)],
+//                                                startPoint: .topLeading,
+//                                                endPoint: .topTrailing
+//                                            ),
+//                                            lineWidth: 1.4
+//                                        )
+//                                )
                         }
                         
                         Text(text)
@@ -57,29 +58,30 @@ struct PreLobbyButton: View {
                             .padding(.bottom, 15)
                     }
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .inset(by: 0.7)
-                        .stroke(
-                            LinearGradient(
-                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1.4
-                        )
-                )
+                .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
+//                .overlay(
+//                    RoundedRectangle(cornerRadius: 20)
+//                        .inset(by: 0.7)
+//                        .stroke(
+//                            LinearGradient(
+//                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
+//                                startPoint: .topLeading,
+//                                endPoint: .bottomTrailing
+//                            ),
+//                            lineWidth: 1.4
+//                        )
+//                )
                 .overlay(
                     Group {
                         if isHovered {
-                            RoundedRectangle(cornerRadius: 20)
+                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8))
                                 .fill(Color.white.opacity(0.15))
                         }
                     }
                 )
         }
         .frame(width: width, height: height)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
+//        .contentShape(RoundedRectangle(cornerRadius: 20))
         .buttonBorderShape(.roundedRectangle(radius: 20))
         .onHover { isHovered = $0 }
     }
