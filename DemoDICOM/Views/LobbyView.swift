@@ -58,7 +58,6 @@ struct LobbyView: View {
     
     @State private var activePicker: ActivePicker? = nil
     @State private var isPickerPresented = false
-    @State private var showShareSheet = false
     
     // MARK: - Atria button state
     
@@ -180,9 +179,7 @@ struct LobbyView: View {
                             .frame(width: 300)
                         
                         Button {
-                            if !store.session.isInSession {
-                                showShareSheet = true
-                            }
+                            store.session.startSession()
                         } label: {
                             Text("Start")
                                 .font(.system(size: 25, weight: .bold))
@@ -194,10 +191,6 @@ struct LobbyView: View {
                         .buttonStyle(.plain)
                         .glassBackgroundEffect()
                         .padding(.trailing, 25)
-                        .sheet(isPresented: $showShareSheet) {
-                            GroupActivitySharingSheet(activity: DICOMViewerActivity())
-                                .ignoresSafeArea()
-                        }
                     }
                 }
                 
