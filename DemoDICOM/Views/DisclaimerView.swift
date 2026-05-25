@@ -8,7 +8,9 @@
 import SwiftUI
 
 struct DisclaimerView: View {
-    
+
+    @Environment(\.openURL) private var openURL
+
     var body: some View {
         
         ScrollView {
@@ -89,7 +91,7 @@ struct DisclaimerView: View {
 //            Text("Insert here all the citations")
             
             Button {
- 
+                openURL(URL(string: "https://atria-team.github.io/privacy")!)
             } label: {
                 Rectangle()
                   .foregroundColor(.clear)
