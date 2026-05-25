@@ -21,7 +21,8 @@ struct HomeActionButton: View {
             action()
         } label: {
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.5, green: 0.5, blue: 0.5).opacity(1))
+                .fill(
+                    Color.black.opacity(0.125))
                 .frame(width: width, height: height)
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 2)
                 .overlay(
@@ -41,18 +42,6 @@ struct HomeActionButton: View {
                     .allowsHitTesting(false)
                 )
                 .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
-//                .overlay(
-//                    RoundedRectangle(cornerRadius: 20)
-//                        .inset(by: 0.7)
-//                        .stroke(
-//                            LinearGradient(
-//                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
-//                                startPoint: .topLeading,
-//                                endPoint: .bottomTrailing
-//                            ),
-//                            lineWidth: 1.4
-//                        )
-//                )
                 .overlay(
                     Group {
                         if isHovered {
@@ -74,4 +63,9 @@ struct HomeActionButton: View {
         print("tapped")
     }
     .padding(40)
+}
+
+#Preview(windowStyle: .automatic) {
+    HomeView()
+        .environment(AppStore())
 }

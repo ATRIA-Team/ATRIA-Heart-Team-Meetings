@@ -40,6 +40,7 @@ struct HomeView: View {
                             Text("ATRIA is your companion for pre-operative meetings. Start a meeting to begin!")
                                 .font(.default)
                                 .fontWeight(.light)
+                                .frame(width: 200, height: 100)
                                 .padding(.bottom)
                             Button {
                                 showShareSheet = true
@@ -48,7 +49,12 @@ struct HomeView: View {
                                     Image(systemName: "video.fill")
                                     Text("Start meeting")
                                 }
+                                .padding()
                             }
+                            .background(LinearGradient(colors: [Color.black.opacity(0.3), Color.black.opacity(0.1)], startPoint: .bottom, endPoint: .top))
+                            .clipShape(Capsule())
+                            .buttonStyle(.plain)
+                            .glassBackgroundEffect()
                             .sheet(isPresented: $showShareSheet) {
                                 GroupActivitySharingSheet(activity: DICOMViewerActivity())
                                     .ignoresSafeArea()
@@ -63,7 +69,7 @@ struct HomeView: View {
                             .padding(.trailing, 300)
                             .frame(width: 250, height: 150)
                     }
-                    .padding(50)
+                    .frame(height: 325)
 
                     HStack(spacing: 30) {
                         HomeActionButton(icon: "eye.circle.fill", text: "DICOM Viewer", width: 350, height: 200) {
@@ -72,10 +78,6 @@ struct HomeView: View {
 
                         HomeActionButton(icon: "document.on.document.fill", text: "Annotations", width: 350, height: 200) {
                             showAnnotations = true
-                        }
-
-                        HomeActionButton(icon: "doc.text.fill", text: "Disclaimer", width: 350, height: 200) {
-                            showDisclaimer = true
                         }
                     }
                     .padding(50)

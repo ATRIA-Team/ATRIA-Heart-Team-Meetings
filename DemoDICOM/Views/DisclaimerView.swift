@@ -79,21 +79,21 @@ struct DisclaimerView: View {
 
             }
             
-            HStack {
-                Text("Citations")
-                    .font(.title)
-                
-                Spacer()
-            }
-            
-            Text("Insert here all the citations")
+//            HStack {
+//                Text("Citations")
+//                    .font(.title)
+//                
+//                Spacer()
+//            }
+//            
+//            Text("Insert here all the citations")
             
             Button {
-
+ 
             } label: {
                 Rectangle()
                   .foregroundColor(.clear)
-                  .frame(width: 80, height: 40)
+                  .frame(width: 400, height: 40)
                   .background(
                     LinearGradient(
                       stops: [
@@ -107,17 +107,11 @@ struct DisclaimerView: View {
                   .cornerRadius(20)
                   .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 2)
                   .overlay(
-                      RoundedRectangle(cornerRadius: 20)
-                          .inset(by: 0.7)
-                          .stroke(
-                              LinearGradient(
-                                  colors: [.white.opacity(0.4), .white.opacity(0.05)],
-                                  startPoint: .topLeading,
-                                  endPoint: .bottomTrailing
-                              ),
-                              lineWidth: 1.4
-                          )
+                    ZStack {
+                        Text("More info about ATRIA - Heart Team Meetings")
+                    }
                   )
+                  .glassBackgroundEffect()
             }
             .buttonStyle(.plain)
             

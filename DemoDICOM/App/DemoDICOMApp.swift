@@ -24,7 +24,8 @@ struct DemoDICOMApp: App {
                 .environment(store)
                 .task { store.iCloud.start() }
         }
-        .defaultSize(width: 1920, height: 1080)
+        .defaultSize(width: 1440, height: 850)
+        .windowResizability(.contentSize)
         .modelContainer(annotationContainer)
 
         WindowGroup(id: "annotation", for: UUID.self) { $sessionID in
@@ -60,6 +61,7 @@ struct DemoDICOMApp: App {
             .environment(store)
         }
         .defaultSize(width: 1200, height: 900)
+        .windowResizability(.contentSize)
 
         WindowGroup(id: "remoteControls") {
             RemoteControlsView()

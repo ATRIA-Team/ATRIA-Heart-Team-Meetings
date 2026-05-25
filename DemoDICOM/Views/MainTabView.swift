@@ -9,14 +9,18 @@ import SwiftUI
 ///
 /// Uses `.sidebarAdaptable` which renders as a compact sidebar ornament on visionOS,
 /// giving access to the DICOM viewer and the saved annotations library.
-struct DeprecatedMainTabView: View {
+struct MainTabView: View {
+    
     var body: some View {
+        
         TabView {
-            Tab("Viewer", systemImage: "doc.viewfinder") {
-                NavigationStack { ContentView() }
+            
+            Tab("Home", systemImage: "house.fill") {
+                HomeView()
             }
-            Tab("Annotations", systemImage: "pencil.and.list.clipboard") {
-                SavedAnnotationsView()
+            
+            Tab("Disclaimer", systemImage: "info.circle.text.page.fill") {
+                DisclaimerView()
             }
         }
         .tabViewStyle(.sidebarAdaptable)
