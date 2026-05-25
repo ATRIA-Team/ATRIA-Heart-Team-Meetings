@@ -97,11 +97,9 @@ struct ContentView: View {
             switch activePicker {
             case .folder: store.importFolder(url: url)
             case .html:
-                store.document.htmlFileURL = url
-                openWindow(id: "htmlViewer")
+                openWindow(id: "htmlViewer", value: url)
             case .pdf:
-                store.document.pdfFileURL = url
-                openWindow(id: "pdfViewer")
+                openWindow(id: "pdfViewer", value: url)
             case nil: break
             }
         }

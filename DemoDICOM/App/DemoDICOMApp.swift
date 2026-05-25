@@ -41,14 +41,14 @@ struct DemoDICOMApp: App {
         .defaultSize(width: 360, height: 220)
         .windowResizability(.contentSize)
 
-        WindowGroup(id: "htmlViewer") {
-            HTMLViewerWindow()
+        WindowGroup(id: "htmlViewer", for: URL.self) { $url in
+            HTMLViewerWindow(url: url)
                 .environment(store)
         }
         .defaultSize(width: 800, height: 600)
 
-        WindowGroup(id: "pdfViewer") {
-            PDFViewerWindow()
+        WindowGroup(id: "pdfViewer", for: URL.self) { $url in
+            PDFViewerWindow(url: url)
                 .environment(store)
         }
         .defaultSize(width: 1600, height: 1200)

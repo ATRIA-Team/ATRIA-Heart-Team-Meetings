@@ -16,10 +16,11 @@ import WebKit
 
 struct HTMLViewerWindow: View {
     @Environment(AppStore.self) private var store
+    let url: URL?
 
     var body: some View {
         Group {
-            if let url = store.document.htmlFileURL {
+            if let url = url {
                 WebView(url: url)
                     .ignoresSafeArea()
             } else {
@@ -30,7 +31,7 @@ struct HTMLViewerWindow: View {
                 )
             }
         }
-        .navigationTitle("HTML Viewer")
+        .navigationTitle(url?.lastPathComponent ?? "HTML Viewer")
     }
 }
 

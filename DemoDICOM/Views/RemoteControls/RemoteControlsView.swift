@@ -186,8 +186,7 @@ struct RemoteControlsView: View {
     }
 
     private func openDocumentLocally(_ url: URL) {
-        store.document.pdfFileURL = url
-        openWindow(id: "pdfViewer")
+        openWindow(id: "pdfViewer", value: url)
     }
 
     // MARK: - File picker popover content
