@@ -17,7 +17,7 @@ struct DisclaimerView: View {
         VStack(alignment: .leading, spacing: 25) {
             
             HStack {
-                Text("Disclaimer and Citations")
+                Text("Disclaimer")
                     .font(.title)
                 
                 Spacer()
