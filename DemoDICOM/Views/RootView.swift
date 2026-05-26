@@ -34,14 +34,32 @@ struct RootView: View {
             }
         }
         .onChange(of: store.session.sessionHasStarted) { _, started in
-            if started { openWindow(id: "remoteControls") }
+            if started {
+                openWindow(id: "remoteControls")
+            } else {
+                dismissWindow(id: "remoteControls")
+                dismissWindow(id: "pdfViewer")
+                dismissWindow(id: "htmlViewer")
+                dismissWindow(id: "drawingTools")
+                for sessionID in store.annotation.liveSessions.keys {
+                    dismissWindow(id: "annotation", value: sessionID)
+                }
+                if store.isDrawingActive {
+                    Task {
+                        store.isDrawingActive = false
+                        await dismissImmersiveSpace()
+                    }
+                }
+            }
         }
         .onChange(of: store.isDrawingActive) { _, newValue in
             Task {
                 if newValue {
                     store.suppressDrawingToolsPanel = true
                     await openImmersiveSpace(id: "DrawingSpace")
-                    openWindow(id: "drawingTools")
+                    if !store.session.isInSession {
+                        openWindow(id: "drawingTools")
+                    }
                 } else {
                     dismissWindow(id: "drawingTools")
                     await dismissImmersiveSpace()

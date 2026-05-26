@@ -20,7 +20,7 @@ struct DrawPointMessage: Codable {
 
 /// Sent via the **unreliable** GroupSessionMessenger for real-time 2D annotation sync.
 ///
-/// Points are emitted for every Apple Pencil move in the annotation window.
+/// Points are emitted for every Spatial accessory move in the annotation window.
 /// `isStart` marks the beginning of a new stroke; `isEnd` marks its completion.
 /// Coordinates are normalized to [0, 1] so the shared panel can scale them to any size.
 /// `sessionID` ties each point to its annotation session so multiple concurrent

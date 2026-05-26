@@ -57,7 +57,7 @@ struct ImmersiveDrawingView: View {
         // Open the floating brush-controls window when the immersive space starts,
         // unless the caller already provides its own brush controls.
         .onAppear {
-            if !store.suppressDrawingToolsPanel {
+            if !store.suppressDrawingToolsPanel && !store.session.isInSession {
                 openWindow(id: "drawingTools")
             }
             store.suppressDrawingToolsPanel = false
@@ -227,7 +227,6 @@ struct DrawingToolsPanel: View {
                 } label: {
                     Label("Stop Drawing", systemImage: "pencil.slash")
                 }
-                .tint(.orange)
             }
 
             Divider()

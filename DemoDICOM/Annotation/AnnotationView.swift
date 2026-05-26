@@ -121,7 +121,7 @@ struct AnnotationView: View {
                 }
                 .overlay(alignment: .bottom) {
                     if canvasState.strokeCount == 0 {
-                        Text("Draw with Apple Pencil Pro")
+                        Text("Draw with spatial pen or finger")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 12)

@@ -58,7 +58,7 @@ final class PencilCanvasState {
 
 // MARK: - PencilCanvasUIView
 
-/// UIView that captures Apple Pencil Pro touches and renders strokes
+/// UIView that captures Spatial accessory touches and renders strokes
 /// as `CAShapeLayer`s — one per completed stroke, for easy undo.
 final class PencilCanvasUIView: UIView {
 
@@ -144,7 +144,7 @@ final class PencilCanvasUIView: UIView {
         strokeCount = strokeLayers.count
     }
 
-    // MARK: Touch handling — Apple Pencil Pro only
+    // MARK: Touch handling — Spatial accessory only
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first, touch.type == .pencil || touch.type == .direct else { return }

@@ -32,7 +32,9 @@ struct SharedWindow: View {
             }
         }
         .ornament(
-            visibility: store.viewer.sliceCount > 1 && isDICOMExamType(store.document.sharedWindowExamType) ? .visible : .hidden,
+            visibility: store.document.sharedAnnotationSessionID != nil
+                ? .hidden
+                : (store.viewer.sliceCount > 1 && isDICOMExamType(store.document.sharedWindowExamType) ? .visible : .hidden),
             attachmentAnchor: .scene(.bottom)
         ) {
             VStack(spacing: 4) {
@@ -53,6 +55,17 @@ struct SharedWindow: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 14)
             .glassBackgroundEffect()
+        }
+        .ornament(
+            visibility: store.document.sharedAnnotationSessionID != nil ? .visible : .hidden,
+            attachmentAnchor: .scene(.bottom)
+        ) {
+            if let sessionID = store.document.sharedAnnotationSessionID {
+                brushControls(sessionID: sessionID)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .glassBackgroundEffect()
+            }
         }
         .navigationTitle(isDICOMExamType(store.document.sharedWindowExamType) ? "" : sharedWindowTitle)
         .toolbar {
@@ -159,9 +172,6 @@ struct SharedWindow: View {
                         store.sendAnnotationPoint(msg)
                     }
                 )
-            }
-            .overlay(alignment: .bottom) {
-                brushControls(sessionID: session.id)
             }
             .padding()
             .onChange(of: session.id) { _, _ in
