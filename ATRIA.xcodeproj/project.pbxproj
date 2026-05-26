@@ -31,64 +31,64 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DemoDICOMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		781BD6002FBC7C8500AE0DEF /* DemoDICOMMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DemoDICOMMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		78773F032FADDA17008A1D66 /* DemoDICOMmac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoDICOMmac.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoDICOM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		781BD4D82FBC6AE500AE0DEF /* ATRIATests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ATRIATests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		781BD6002FBC7C8500AE0DEF /* ATRIAMacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ATRIAMacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		78773F032FADDA17008A1D66 /* ATRIAmac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ATRIAmac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A5BEF10E2F73F7B30033EB1B /* ATRIA.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ATRIA.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A5BEF1122F73F7B30033EB1B /* RealityKitContent */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = RealityKitContent; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		781BD5FB2FBC7C6800AE0DEF /* Exceptions for "DemoDICOMmac" folder in "DemoDICOMmac" target */ = {
+		781BD5FB2FBC7C6800AE0DEF /* Exceptions for "ATRIAmac" folder in "ATRIAmac" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				FolderModel.swift,
 			);
-			target = 78773F022FADDA17008A1D66 /* DemoDICOMmac */;
+			target = 78773F022FADDA17008A1D66 /* ATRIAmac */;
 		};
-		78679F6F2FC603EC00EC81EE /* Exceptions for "DemoDICOM" folder in "DemoDICOMmac" target */ = {
+		78679F6F2FC603EC00EC81EE /* Exceptions for "ATRIA" folder in "ATRIAmac" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppIconComposer.icon,
 			);
-			target = 78773F022FADDA17008A1D66 /* DemoDICOMmac */;
+			target = 78773F022FADDA17008A1D66 /* ATRIAmac */;
 		};
-		A5BEF11C2F73F7B40033EB1B /* Exceptions for "DemoDICOM" folder in "DemoDICOM" target */ = {
+		A5BEF11C2F73F7B40033EB1B /* Exceptions for "ATRIA" folder in "ATRIA" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				AppIconComposer.icon,
 				Info.plist,
 			);
-			target = A5BEF10D2F73F7B30033EB1B /* DemoDICOM */;
+			target = A5BEF10D2F73F7B30033EB1B /* ATRIA */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */ = {
+		781BD4D92FBC6AE500AE0DEF /* ATRIATests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DemoDICOMTests;
+			path = ATRIATests;
 			sourceTree = "<group>";
 		};
-		781BD6012FBC7C8500AE0DEF /* DemoDICOMMacTests */ = {
+		781BD6012FBC7C8500AE0DEF /* ATRIAmacTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DemoDICOMMacTests;
+			path = ATRIAmacTests;
 			sourceTree = "<group>";
 		};
-		78773F042FADDA17008A1D66 /* DemoDICOMmac */ = {
+		78773F042FADDA17008A1D66 /* ATRIAmac */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				781BD5FB2FBC7C6800AE0DEF /* Exceptions for "DemoDICOMmac" folder in "DemoDICOMmac" target */,
+				781BD5FB2FBC7C6800AE0DEF /* Exceptions for "ATRIAmac" folder in "ATRIAmac" target */,
 			);
-			path = DemoDICOMmac;
+			path = ATRIAmac;
 			sourceTree = "<group>";
 		};
-		A5BEF1102F73F7B30033EB1B /* DemoDICOM */ = {
+		A5BEF1102F73F7B30033EB1B /* ATRIA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A5BEF11C2F73F7B40033EB1B /* Exceptions for "DemoDICOM" folder in "DemoDICOM" target */,
-				78679F6F2FC603EC00EC81EE /* Exceptions for "DemoDICOM" folder in "DemoDICOMmac" target */,
+				A5BEF11C2F73F7B40033EB1B /* Exceptions for "ATRIA" folder in "ATRIA" target */,
+				78679F6F2FC603EC00EC81EE /* Exceptions for "ATRIA" folder in "ATRIAmac" target */,
 			);
-			path = DemoDICOM;
+			path = ATRIA;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -139,11 +139,11 @@
 		A5BEF1052F73F7B30033EB1B = {
 			isa = PBXGroup;
 			children = (
-				A5BEF1102F73F7B30033EB1B /* DemoDICOM */,
+				A5BEF1102F73F7B30033EB1B /* ATRIA */,
 				A5BEF1112F73F7B30033EB1B /* Packages */,
-				78773F042FADDA17008A1D66 /* DemoDICOMmac */,
-				781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */,
-				781BD6012FBC7C8500AE0DEF /* DemoDICOMMacTests */,
+				78773F042FADDA17008A1D66 /* ATRIAmac */,
+				781BD4D92FBC6AE500AE0DEF /* ATRIATests */,
+				781BD6012FBC7C8500AE0DEF /* ATRIAmacTests */,
 				781BD4F12FBC6B0A00AE0DEF /* Frameworks */,
 				A5BEF10F2F73F7B30033EB1B /* Products */,
 			);
@@ -152,10 +152,10 @@
 		A5BEF10F2F73F7B30033EB1B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */,
-				78773F032FADDA17008A1D66 /* DemoDICOMmac.app */,
-				781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */,
-				781BD6002FBC7C8500AE0DEF /* DemoDICOMMacTests.xctest */,
+				A5BEF10E2F73F7B30033EB1B /* ATRIA.app */,
+				78773F032FADDA17008A1D66 /* ATRIAmac.app */,
+				781BD4D82FBC6AE500AE0DEF /* ATRIATests.xctest */,
+				781BD6002FBC7C8500AE0DEF /* ATRIAMacTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -171,9 +171,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		781BD4D72FBC6AE500AE0DEF /* DemoDICOMTests */ = {
+		781BD4D72FBC6AE500AE0DEF /* ATRIATests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 781BD4DE2FBC6AE500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMTests" */;
+			buildConfigurationList = 781BD4DE2FBC6AE500AE0DEF /* Build configuration list for PBXNativeTarget "ATRIATests" */;
 			buildPhases = (
 				781BD4D42FBC6AE500AE0DEF /* Sources */,
 				781BD4D52FBC6AE500AE0DEF /* Frameworks */,
@@ -185,19 +185,19 @@
 				781BD4DD2FBC6AE500AE0DEF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				781BD4D92FBC6AE500AE0DEF /* DemoDICOMTests */,
+				781BD4D92FBC6AE500AE0DEF /* ATRIATests */,
 			);
-			name = DemoDICOMTests;
+			name = ATRIATests;
 			packageProductDependencies = (
 				781BD4F22FBC6B0A00AE0DEF /* DicomCore */,
 			);
 			productName = DemoDICOMTests;
-			productReference = 781BD4D82FBC6AE500AE0DEF /* DemoDICOMTests.xctest */;
+			productReference = 781BD4D82FBC6AE500AE0DEF /* ATRIATests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		781BD5FF2FBC7C8500AE0DEF /* DemoDICOMMacTests */ = {
+		781BD5FF2FBC7C8500AE0DEF /* ATRIAMacTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 781BD6062FBC7C8500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMMacTests" */;
+			buildConfigurationList = 781BD6062FBC7C8500AE0DEF /* Build configuration list for PBXNativeTarget "ATRIAMacTests" */;
 			buildPhases = (
 				781BD5FC2FBC7C8500AE0DEF /* Sources */,
 				781BD5FD2FBC7C8500AE0DEF /* Frameworks */,
@@ -209,18 +209,18 @@
 				781BD6052FBC7C8500AE0DEF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				781BD6012FBC7C8500AE0DEF /* DemoDICOMMacTests */,
+				781BD6012FBC7C8500AE0DEF /* ATRIAmacTests */,
 			);
-			name = DemoDICOMMacTests;
+			name = ATRIAMacTests;
 			packageProductDependencies = (
 			);
 			productName = DemoDICOMMacTests;
-			productReference = 781BD6002FBC7C8500AE0DEF /* DemoDICOMMacTests.xctest */;
+			productReference = 781BD6002FBC7C8500AE0DEF /* ATRIAMacTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		78773F022FADDA17008A1D66 /* DemoDICOMmac */ = {
+		78773F022FADDA17008A1D66 /* ATRIAmac */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 78773F0B2FADDA18008A1D66 /* Build configuration list for PBXNativeTarget "DemoDICOMmac" */;
+			buildConfigurationList = 78773F0B2FADDA18008A1D66 /* Build configuration list for PBXNativeTarget "ATRIAmac" */;
 			buildPhases = (
 				78773EFF2FADDA17008A1D66 /* Sources */,
 				78773F002FADDA17008A1D66 /* Frameworks */,
@@ -231,18 +231,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				78773F042FADDA17008A1D66 /* DemoDICOMmac */,
+				78773F042FADDA17008A1D66 /* ATRIAmac */,
 			);
-			name = DemoDICOMmac;
+			name = ATRIAmac;
 			packageProductDependencies = (
 			);
 			productName = DemoDICOMmac;
-			productReference = 78773F032FADDA17008A1D66 /* DemoDICOMmac.app */;
+			productReference = 78773F032FADDA17008A1D66 /* ATRIAmac.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A5BEF10D2F73F7B30033EB1B /* DemoDICOM */ = {
+		A5BEF10D2F73F7B30033EB1B /* ATRIA */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A5BEF11D2F73F7B40033EB1B /* Build configuration list for PBXNativeTarget "DemoDICOM" */;
+			buildConfigurationList = A5BEF11D2F73F7B40033EB1B /* Build configuration list for PBXNativeTarget "ATRIA" */;
 			buildPhases = (
 				A5BEF10A2F73F7B30033EB1B /* Sources */,
 				A5BEF10B2F73F7B30033EB1B /* Frameworks */,
@@ -253,16 +253,16 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A5BEF1102F73F7B30033EB1B /* DemoDICOM */,
+				A5BEF1102F73F7B30033EB1B /* ATRIA */,
 			);
-			name = DemoDICOM;
+			name = ATRIA;
 			packageProductDependencies = (
 				A5BEF1132F73F7B30033EB1B /* RealityKitContent */,
 				A57AFE182F866311009CD5BE /* DicomCore */,
 				7866E4B12FB5CB64002174BF /* ICloudFolderSync */,
 			);
 			productName = DemoDICOM;
-			productReference = A5BEF10E2F73F7B30033EB1B /* DemoDICOM.app */;
+			productReference = A5BEF10E2F73F7B30033EB1B /* ATRIA.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -291,7 +291,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A5BEF1092F73F7B30033EB1B /* Build configuration list for PBXProject "DemoDICOM" */;
+			buildConfigurationList = A5BEF1092F73F7B30033EB1B /* Build configuration list for PBXProject "ATRIA" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -309,10 +309,10 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A5BEF10D2F73F7B30033EB1B /* DemoDICOM */,
-				78773F022FADDA17008A1D66 /* DemoDICOMmac */,
-				781BD4D72FBC6AE500AE0DEF /* DemoDICOMTests */,
-				781BD5FF2FBC7C8500AE0DEF /* DemoDICOMMacTests */,
+				A5BEF10D2F73F7B30033EB1B /* ATRIA */,
+				78773F022FADDA17008A1D66 /* ATRIAmac */,
+				781BD4D72FBC6AE500AE0DEF /* ATRIATests */,
+				781BD5FF2FBC7C8500AE0DEF /* ATRIAMacTests */,
 			);
 		};
 /* End PBXProject section */
@@ -382,12 +382,12 @@
 /* Begin PBXTargetDependency section */
 		781BD4DD2FBC6AE500AE0DEF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A5BEF10D2F73F7B30033EB1B /* DemoDICOM */;
+			target = A5BEF10D2F73F7B30033EB1B /* ATRIA */;
 			targetProxy = 781BD4DC2FBC6AE500AE0DEF /* PBXContainerItemProxy */;
 		};
 		781BD6052FBC7C8500AE0DEF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 78773F022FADDA17008A1D66 /* DemoDICOMmac */;
+			target = 78773F022FADDA17008A1D66 /* ATRIAmac */;
 			targetProxy = 781BD6042FBC7C8500AE0DEF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -411,7 +411,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 7;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOM.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOM";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ATRIA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ATRIA";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -434,7 +434,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 7;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOM.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOM";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ATRIA.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ATRIA";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
@@ -457,7 +457,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOMmac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOMmac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ATRIAmac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ATRIAmac";
 			};
 			name = Debug;
 		};
@@ -479,7 +479,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DemoDICOMmac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DemoDICOMmac";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ATRIAmac.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ATRIAmac";
 			};
 			name = Release;
 		};
@@ -771,7 +771,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		781BD4DE2FBC6AE500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMTests" */ = {
+		781BD4DE2FBC6AE500AE0DEF /* Build configuration list for PBXNativeTarget "ATRIATests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				781BD4DF2FBC6AE500AE0DEF /* Debug */,
@@ -780,7 +780,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		781BD6062FBC7C8500AE0DEF /* Build configuration list for PBXNativeTarget "DemoDICOMMacTests" */ = {
+		781BD6062FBC7C8500AE0DEF /* Build configuration list for PBXNativeTarget "ATRIAMacTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				781BD6072FBC7C8500AE0DEF /* Debug */,
@@ -789,7 +789,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		78773F0B2FADDA18008A1D66 /* Build configuration list for PBXNativeTarget "DemoDICOMmac" */ = {
+		78773F0B2FADDA18008A1D66 /* Build configuration list for PBXNativeTarget "ATRIAmac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				78773F0C2FADDA18008A1D66 /* Debug */,
@@ -798,7 +798,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A5BEF1092F73F7B30033EB1B /* Build configuration list for PBXProject "DemoDICOM" */ = {
+		A5BEF1092F73F7B30033EB1B /* Build configuration list for PBXProject "ATRIA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A5BEF1202F73F7B40033EB1B /* Debug */,
@@ -807,7 +807,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A5BEF11D2F73F7B40033EB1B /* Build configuration list for PBXNativeTarget "DemoDICOM" */ = {
+		A5BEF11D2F73F7B40033EB1B /* Build configuration list for PBXNativeTarget "ATRIA" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A5BEF11E2F73F7B40033EB1B /* Debug */,
