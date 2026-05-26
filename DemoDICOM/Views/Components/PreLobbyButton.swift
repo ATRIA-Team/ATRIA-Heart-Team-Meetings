@@ -14,76 +14,45 @@ struct PreLobbyButton: View {
     let width: CGFloat
     let height: CGFloat
     let action: () -> Void
-    @State private var isHovered = false
 
     var body: some View {
         Button {
             action()
         } label: {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.5, green: 0.5, blue: 0.5).opacity(1))
-                .frame(width: width, height: height)
-                .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 2)
-                .overlay(
-                    ZStack {
-                        Image(systemName: icon)
-                            .font(.system(size: 75, weight: .bold))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                            .padding(.top, 30)
-                            .padding(.trailing, 35)
+            ZStack {
+                Image(systemName: icon)
+                    .font(.system(size: 75, weight: .bold))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .padding(.top, 30)
+                    .padding(.trailing, 35)
 
-                        VStack {
-                            Spacer()
-                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8))
-                                .frame(height: 50)
-                                .foregroundStyle(Color.Resolved(red: 0.8, green: 0.8, blue: 0.8).opacity(0.3))
-                                .glassBackgroundEffect(in: UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8)))
-//                                .overlay(
-//                                    UnevenRoundedRectangle(cornerRadii: .init(topLeading: 10, bottomLeading: 20, bottomTrailing: 20, topTrailing: 10))
-//                                        .stroke(
-//                                            LinearGradient(
-//                                                colors: [.white.opacity(0.3), .white.opacity(0.3)],
-//                                                startPoint: .topLeading,
-//                                                endPoint: .topTrailing
-//                                            ),
-//                                            lineWidth: 1.4
-//                                        )
-//                                )
-                        }
-                        
-                        Text(text)
-                            .font(.system(size: 20, weight: .bold))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                            .padding(.horizontal, 20)
-                            .padding(.bottom, 15)
-                    }
-                )
-                .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
-//                .overlay(
-//                    RoundedRectangle(cornerRadius: 20)
-//                        .inset(by: 0.7)
-//                        .stroke(
-//                            LinearGradient(
-//                                colors: [.white.opacity(0.4), .white.opacity(0.05)],
-//                                startPoint: .topLeading,
-//                                endPoint: .bottomTrailing
-//                            ),
-//                            lineWidth: 1.4
-//                        )
-//                )
-                .overlay(
-                    Group {
-                        if isHovered {
-                            UnevenRoundedRectangle(cornerRadii: .init(topLeading: 8, bottomLeading: 8, bottomTrailing: 8, topTrailing: 8))
-                                .fill(Color.white.opacity(0.15))
-                        }
-                    }
-                )
+                // Bottom label bar — plain material, no nested glassBackgroundEffect
+                VStack {
+                    Spacer()
+                    UnevenRoundedRectangle(cornerRadii: .init(
+                        topLeading: 0, bottomLeading: 20,
+                        bottomTrailing: 20, topTrailing: 0
+                    ))
+                    .fill(Color.white.opacity(0.08))
+                    .frame(height: 50)
+                }
+
+                Text(text)
+                    .font(.system(size: 20, weight: .bold))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 15)
+            }
+            .frame(width: width, height: height)
         }
-        .frame(width: width, height: height)
-//        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .buttonStyle(.plain)
         .buttonBorderShape(.roundedRectangle(radius: 20))
-        .onHover { isHovered = $0 }
+        .frame(width: width, height: height)
+        .background(
+            Color(red: 0.5, green: 0.5, blue: 0.5).opacity(0.6),
+            in: RoundedRectangle(cornerRadius: 20)
+        )
+        .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
     }
 }
 
