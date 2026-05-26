@@ -13,7 +13,6 @@ struct SharedWindow: View {
 
     @Environment(AppStore.self) private var store
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.dismissWindow) private var dismissWindow
 
     // Local drawing state for the shared annotation canvas
     @State private var canvasState    = PencilCanvasState()
@@ -32,43 +31,54 @@ struct SharedWindow: View {
                 placeholderView
             }
         }
+        .ornament(
+            visibility: store.viewer.sliceCount > 1 && isDICOMExamType(store.document.sharedWindowExamType) ? .visible : .hidden,
+            attachmentAnchor: .scene(.bottom)
+        ) {
+            VStack(spacing: 4) {
+                Slider(
+                    value: Binding(
+                        get: { Double(store.currentSliceIndex) },
+                        set: { store.currentSliceIndex = Int($0) }
+                    ),
+                    in: 0...Double(max(store.viewer.sliceCount - 1, 1)),
+                    step: 1
+                )
+                .frame(width: 400)
+                Text("Slice \(store.currentSliceIndex + 1) / \(store.viewer.sliceCount)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 14)
+            .glassBackgroundEffect()
+        }
         .navigationTitle(isDICOMExamType(store.document.sharedWindowExamType) ? "" : sharedWindowTitle)
         .toolbar {
             if isDICOMExamType(store.document.sharedWindowExamType) {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 10) {
-                        Text(store.document.sharedWindowExamType?.displayName ?? "")
+                ToolbarItem(placement: .topBarLeading) {
+                    HStack(spacing: 8) {
+                        Image("atrialogo1")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 28)
+                        Text("DICOM Viewer")
                             .font(.headline)
-
-                        if !store.viewer.patientName.isEmpty
-                            || !store.viewer.studyDescription.isEmpty
-                            || !store.viewer.seriesDescription.isEmpty {
-                            Divider().frame(height: 16)
-
-                            VStack(alignment: .leading, spacing: 1) {
-                                if !store.viewer.patientName.isEmpty {
-                                    Text(store.viewer.patientName)
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                }
-                                let detail = [store.viewer.studyDescription, store.viewer.seriesDescription]
-                                    .filter { !$0.isEmpty }.joined(separator: " · ")
-                                if !detail.isEmpty {
-                                    Text(detail)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-
                     }
+                }
+
+                ToolbarItem(placement: .principal) {
+                    Text(store.viewer.patientName)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 10) {
                         HStack(spacing: 4) {
                             Image(systemName: "pencil.and.outline")
-                            Text("Picnh and Hold image to Annotate")
+                            Text("Pinch and Hold image to Annotate")
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -96,18 +106,6 @@ struct SharedWindow: View {
                             }
                         }
                     }
-                }
-            }
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(role: .destructive) {
-                    dismissWindow(id: "remoteControls")
-                    store.session.leaveSession()
-                } label: {
-                    HStack {
-                        Image(systemName: "shareplay.slash")
-                        Text("End SharePlay session")
-                    }
-                    .foregroundStyle(Color.red)
                 }
             }
         }
@@ -242,25 +240,6 @@ struct SharedWindow: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.black)
 
-                if store.viewer.sliceCount > 1 {
-                    VStack(spacing: 4) {
-                        Slider(
-                            value: Binding(
-                                get: { Double(store.currentSliceIndex) },
-                                set: { store.currentSliceIndex = Int($0) }
-                            ),
-                            in: 0...Double(max(store.viewer.sliceCount - 1, 1)),
-                            step: 1
-                        )
-                        Text("Slice \(store.currentSliceIndex + 1) / \(store.viewer.sliceCount)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
-                    .background(.ultraThinMaterial)
-                }
             }
         } else {
             ContentUnavailableView(
