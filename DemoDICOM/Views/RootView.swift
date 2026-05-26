@@ -12,6 +12,7 @@ struct RootView: View {
     @Environment(AppStore.self) private var store
 
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
 
@@ -40,7 +41,9 @@ struct RootView: View {
                 if newValue {
                     store.suppressDrawingToolsPanel = true
                     await openImmersiveSpace(id: "DrawingSpace")
+                    openWindow(id: "drawingTools")
                 } else {
+                    dismissWindow(id: "drawingTools")
                     await dismissImmersiveSpace()
                 }
             }

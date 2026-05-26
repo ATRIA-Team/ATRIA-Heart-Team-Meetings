@@ -302,6 +302,11 @@ final class SharePlayCoordinator: SharePlayTransport {
     }
 
     @MainActor
+    func endSessionForEveryone() {
+        session?.end()
+    }
+
+    @MainActor
     private func tearDown() {
         isInSession = false
         sessionHasStarted = false

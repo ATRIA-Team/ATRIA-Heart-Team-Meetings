@@ -214,8 +214,6 @@ struct ImmersiveDrawingView: View {
 struct DrawingToolsPanel: View {
 
     @Environment(AppStore.self) private var store
-    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
-    @Environment(\.dismissWindow) private var dismissWindow
 
     var body: some View {
         @Bindable var drawing = store.drawing
@@ -225,11 +223,7 @@ struct DrawingToolsPanel: View {
                     .font(.headline)
                 Spacer()
                 Button {
-                    Task {
-                        dismissWindow(id: "drawingTools")
-                        await dismissImmersiveSpace()
-                        store.isDrawingActive = false
-                    }
+                    store.isDrawingActive = false
                 } label: {
                     Label("Stop Drawing", systemImage: "pencil.slash")
                 }

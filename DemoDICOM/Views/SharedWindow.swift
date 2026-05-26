@@ -7,6 +7,7 @@
 
 import SwiftUI
 import PDFKit
+import DicomCore
 
 struct SharedWindow: View {
 
@@ -31,8 +32,72 @@ struct SharedWindow: View {
                 placeholderView
             }
         }
-        .navigationTitle(sharedWindowTitle)
+        .navigationTitle(isDICOMExamType(store.document.sharedWindowExamType) ? "" : sharedWindowTitle)
         .toolbar {
+            if isDICOMExamType(store.document.sharedWindowExamType) {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 10) {
+                        Text(store.document.sharedWindowExamType?.displayName ?? "")
+                            .font(.headline)
+
+                        if !store.viewer.patientName.isEmpty
+                            || !store.viewer.studyDescription.isEmpty
+                            || !store.viewer.seriesDescription.isEmpty {
+                            Divider().frame(height: 16)
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                if !store.viewer.patientName.isEmpty {
+                                    Text(store.viewer.patientName)
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                }
+                                let detail = [store.viewer.studyDescription, store.viewer.seriesDescription]
+                                    .filter { !$0.isEmpty }.joined(separator: " · ")
+                                if !detail.isEmpty {
+                                    Text(detail)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 10) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil.and.outline")
+                            Text("Picnh and Hold image to Annotate")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                        Divider().frame(height: 16)
+
+                        Menu {
+                            ForEach(DCMWindowingProcessor.ctPresets, id: \.self) { preset in
+                                Button {
+                                    store.selectedPreset = preset
+                                } label: {
+                                    if preset == store.selectedPreset {
+                                        Label(preset.displayName, systemImage: "checkmark")
+                                    } else {
+                                        Text(preset.displayName)
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(store.selectedPreset.displayName)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                    }
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button(role: .destructive) {
                     dismissWindow(id: "remoteControls")
@@ -163,21 +228,54 @@ struct SharedWindow: View {
     @ViewBuilder
     private var dicomViewer: some View {
         if let image = store.viewer.currentSliceImage {
-            DICOMSliceViewer(
-                image: image,
-                sliceIndex: Binding(
-                    get: { store.currentSliceIndex },
-                    set: { store.currentSliceIndex = $0 }
-                ),
-                sliceCount: store.viewer.sliceCount
-            )
-            .background(.black)
+            VStack(spacing: 0) {
+                DICOMSliceViewer(
+                    image: image,
+                    sliceIndex: Binding(
+                        get: { store.currentSliceIndex },
+                        set: { store.currentSliceIndex = $0 }
+                    ),
+                    sliceCount: store.viewer.sliceCount,
+                    showInlineSlider: false,
+                    showAnnotateHint: false
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.black)
+
+                if store.viewer.sliceCount > 1 {
+                    VStack(spacing: 4) {
+                        Slider(
+                            value: Binding(
+                                get: { Double(store.currentSliceIndex) },
+                                set: { store.currentSliceIndex = Int($0) }
+                            ),
+                            in: 0...Double(max(store.viewer.sliceCount - 1, 1)),
+                            step: 1
+                        )
+                        Text("Slice \(store.currentSliceIndex + 1) / \(store.viewer.sliceCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                }
+            }
         } else {
             ContentUnavailableView(
                 "No DICOM Data",
                 systemImage: "photo.slash",
                 description: Text("This exam has not been loaded yet.")
             )
+        }
+    }
+
+    private func isDICOMExamType(_ examType: ExamType?) -> Bool {
+        guard let examType else { return false }
+        switch examType {
+        case .echo, .ct, .coro: return true
+        default: return false
         }
     }
 
@@ -223,8 +321,45 @@ struct SharedWindow: View {
 }
 
 #Preview(windowStyle: .automatic) {
-    NavigationStack {
+    let store = AppStore()
+
+    let width = 512, height = 512
+
+    func makeSlice(brightness: Double) -> CGImage {
+        var slicePixels = [UInt8](repeating: 0, count: width * height)
+        for y in 0..<height {
+            for x in 0..<width {
+                let dist = hypot(Double(x) - Double(width) / 2, Double(y) - Double(height) / 2)
+                slicePixels[y * width + x] = UInt8(max(0, min(255, brightness - dist * 0.5)))
+            }
+        }
+        let colorSpace = CGColorSpaceCreateDeviceGray()
+        let ctx = CGContext(
+            data: &slicePixels,
+            width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        )!
+        return ctx.makeImage()!
+    }
+
+    let mockSlices = (0..<15).map { i in makeSlice(brightness: 180 + Double(i % 40)) }
+
+    let bundle = DICOMExamBundle(
+        sliceImages: mockSlices,
+        rawPixelBuffers16: [],
+        currentSliceIndex: 0,
+        patientName: "Rossi Mario",
+        studyDescription: "Chest CT",
+        seriesDescription: "Axial 1.0mm",
+        modality: "CT"
+    )
+    store.viewer.applyImportResult(bundle, examType: .ct)
+    store.document.applySharedWindow(.ct)
+
+    return NavigationStack {
         SharedWindow()
-            .environment(AppStore())
+            .environment(store)
     }
 }

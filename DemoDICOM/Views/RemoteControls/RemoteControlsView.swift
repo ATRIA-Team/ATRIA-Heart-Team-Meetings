@@ -22,6 +22,7 @@ struct RemoteControlsView: View {
     }
 
     @State private var filePickerTarget: FilePickerTarget? = nil
+    @State private var showEndMeetingAlert = false
 
     // MARK: - Body
 
@@ -39,6 +40,35 @@ struct RemoteControlsView: View {
                 remoteButton(.ct,    icon: "waveform.path.ecg.rectangle.fill", text: "CT")
                 remoteButton(.coro,  icon: "heart.fill",                        text: "Coro")
                 remoteButton(.other, icon: "heart.text.clipboard.fill",         text: "Other")
+                
+                Button {
+                    showEndMeetingAlert = true
+                } label: {
+                    Rectangle()
+                        .foregroundColor(.clear)
+                        .frame(width: 160, height: 160)
+                        .background(Color(red: 0.5, green: 0.5, blue: 0.5).opacity(0.3))
+                        .cornerRadius(20)
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 2)
+                        .overlay(
+
+                            ZStack {
+
+                                VStack(spacing: 15) {
+
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 50, weight: .bold))
+
+                                    Text("End meeting")
+                                }
+                                .foregroundStyle(Color(red: 0.95, green: 0.5, blue: 0.5))
+                            }
+                        )
+                }
+                .frame(width: 160, height: 160)
+                .tint(Color.red.opacity(0.1))
+                .buttonBorderShape(.roundedRectangle(radius: 20))
+                .glassBackgroundEffect(in: RoundedRectangle(cornerRadius: 20))
             }
 
             HStack(spacing: 8) {
@@ -55,6 +85,14 @@ struct RemoteControlsView: View {
         .padding(30)
         .popover(item: $filePickerTarget) { target in
             filePickerPopover(for: target)
+        }
+        .alert("End Meeting for Everyone?", isPresented: $showEndMeetingAlert) {
+            Button("End Meeting", role: .destructive) {
+                store.session.endSessionForEveryone()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove all participants from the meeting. The FaceTime call will continue.")
         }
     }
 
@@ -81,8 +119,9 @@ struct RemoteControlsView: View {
                     systemImage: store.isDrawingActive ? "pencil.slash" : "pencil.and.outline"
                 )
             }
-            .tint(store.isDrawingActive ? .black.opacity(0.2) : .black.opacity(0.7))
-            .buttonStyle(.bordered)
+            .tint(store.isDrawingActive ? .black.opacity(0.2) : .black.opacity(0.5))
+//            .buttonStyle(.bordered)
+            .glassBackgroundEffect()
 
             Divider().frame(height: 28)
 

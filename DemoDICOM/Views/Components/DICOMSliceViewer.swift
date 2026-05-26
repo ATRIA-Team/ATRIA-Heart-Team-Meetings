@@ -20,6 +20,7 @@ struct DICOMSliceViewer: View {
     /// When true, a slider is shown below the image (SharedWindow style).
     /// When false, the caller manages slice navigation separately (ContentView style).
     var showInlineSlider: Bool = true
+    var showAnnotateHint: Bool = true
 
     @Environment(\.openWindow) private var openWindow
 
@@ -33,10 +34,12 @@ struct DICOMSliceViewer: View {
                     openWindow(id: "annotation", value: UUID())
                 }
                 .overlay(alignment: .bottomTrailing) {
-                    Label("Hold to annotate", systemImage: "pencil.and.outline")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(6)
+                    if showAnnotateHint {
+                        Label("Hold to annotate", systemImage: "pencil.and.outline")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .padding(6)
+                    }
                 }
 
             if showInlineSlider && sliceCount > 1 {

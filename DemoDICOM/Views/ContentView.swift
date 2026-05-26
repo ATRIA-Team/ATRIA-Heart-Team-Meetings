@@ -397,6 +397,8 @@ struct AnnotationStrokesView: View {
 }
 
 #Preview(windowStyle: .automatic) {
-    ContentView()
-        .environment(AppStore())
+    NavigationStack {
+        ContentView()
+    }
+    .environment(AppStore())
 }

@@ -89,6 +89,11 @@ final class SessionStore {
         coordinator.leaveSession()
     }
 
+    @MainActor
+    func endSessionForEveryone() {
+        coordinator.endSessionForEveryone()
+    }
+
     // MARK: - Broadcast helpers (forward to coordinator)
 
     func send(_ message: DICOMSyncMessage) {
