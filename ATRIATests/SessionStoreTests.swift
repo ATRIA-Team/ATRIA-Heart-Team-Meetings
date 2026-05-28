@@ -13,7 +13,7 @@
 import Foundation
 import Testing
 import DicomCore
-@testable import DemoDICOM
+@testable import ATRIA
 
 // MARK: - SessionStoreTests
 
@@ -115,6 +115,16 @@ struct SessionStoreTests {
         let stores = makeStores()
         stores.session.applyMessage(DICOMSyncMessage(kind: .presetChanged(rawValue: MedicalPreset.bone.rawValue)))
         #expect(stores.viewer.selectedPreset == .bone)
+    }
+
+    @Test("presetChanged triggers reapplyWindowing when raw pixel buffers are present")
+    func presetChangedTriggersReapplyWindowing() {
+        let stores = makeStores()
+        stores.viewer.applyImportResult(makeBundle(sliceCount: 1, includeRawBuffers: true), examType: .ct)
+        stores.session.applyMessage(DICOMSyncMessage(kind: .presetChanged(rawValue: MedicalPreset.bone.rawValue)))
+        // reapplyWindowing sets isLoading = true synchronously before dispatching the background Task.
+        // If this is false, the windowing re-application was never triggered.
+        #expect(stores.viewer.isLoading, "applyMessage(.presetChanged) must trigger reapplyWindowing")
     }
 
     @Test("presetChanged with an unknown rawValue is ignored")

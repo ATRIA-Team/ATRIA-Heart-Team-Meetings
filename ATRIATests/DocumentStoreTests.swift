@@ -5,7 +5,7 @@
 
 import Testing
 import Foundation
-@testable import DemoDICOM
+@testable import ATRIA
 
 // MARK: - DocumentStoreTests
 

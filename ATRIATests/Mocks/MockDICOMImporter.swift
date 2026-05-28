@@ -8,7 +8,7 @@
 
 import Foundation
 import DicomCore
-@testable import DemoDICOM
+@testable import ATRIA
 
 final class MockDICOMImporter: DICOMImporting {
 

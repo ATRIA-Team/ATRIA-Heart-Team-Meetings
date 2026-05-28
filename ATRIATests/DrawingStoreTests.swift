@@ -5,7 +5,7 @@
 
 import Foundation
 import Testing
-@testable import DemoDICOM
+@testable import ATRIA
 
 // MARK: - DrawingStoreTests
 

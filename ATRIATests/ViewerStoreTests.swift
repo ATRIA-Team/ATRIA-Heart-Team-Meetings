@@ -6,7 +6,7 @@
 import Testing
 import CoreGraphics
 import DicomCore
-@testable import DemoDICOM
+@testable import ATRIA
 
 // MARK: - ViewerStoreTests
 

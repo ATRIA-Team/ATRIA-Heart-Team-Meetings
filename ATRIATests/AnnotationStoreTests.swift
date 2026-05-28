@@ -6,7 +6,7 @@
 import Foundation
 import Testing
 import CoreGraphics
-@testable import DemoDICOM
+@testable import ATRIA
 
 // MARK: - AnnotationStoreTests
 

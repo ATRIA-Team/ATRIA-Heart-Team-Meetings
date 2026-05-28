@@ -12,7 +12,8 @@
 
 import Testing
 import Foundation
-@testable import DemoDICOM
+@testable import ATRIA
+import DicomCore
 
 @Suite("AppStore — cross-cutting actions")
 @MainActor

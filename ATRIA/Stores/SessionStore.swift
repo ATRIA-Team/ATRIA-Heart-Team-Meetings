@@ -169,6 +169,9 @@ final class SessionStore {
         case .presetChanged(let rawValue):
             guard let preset = MedicalPreset(rawValue: rawValue) else { return }
             viewer.applyRemotePresetChange(preset)
+            viewer.reapplyWindowing { [weak viewer] images, examType in
+                viewer?.applyRewindowedImages(images, examType: examType)
+            }
 
         case .annotationSessionOpened(let sessionID, let sliceIndex):
             annotation.remoteSessionOpened(id: sessionID, sliceIndex: sliceIndex) { [weak self] idx in
