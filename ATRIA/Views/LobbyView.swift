@@ -43,15 +43,17 @@ struct LobbyView: View {
     
     private enum ActivePicker {
         case atriaPackage
-        case medicalHistory, vitals, bloodTests, other   // PDF / image
-        case echo, ct, coro                              // DICOM folder
+        case medicalHistory, vitals, bloodTests, other
+        case echo, ct, coro
         
         var allowedTypes: [UTType] {
             switch self {
-            case .atriaPackage:                     return [.atriaPackage]
-            case .medicalHistory, .vitals,
-                    .bloodTests, .other:               return [.pdf, .image]
-            case .echo, .ct, .coro:                 return [.folder]
+            case .atriaPackage:
+                return [.atriaPackage]
+            case .medicalHistory, .vitals, .bloodTests, .other:
+                return [.pdf, .image]
+            case .echo, .ct, .coro:
+                return [.folder]
             }
         }
     }
