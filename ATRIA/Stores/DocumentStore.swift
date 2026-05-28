@@ -26,10 +26,6 @@ final class DocumentStore {
     /// Falls back to the first URL in the list when not explicitly set.
     private var activeDocumentURLs: [ExamType: URL] = [:]
 
-    // MARK: - Active viewer state (not stored files — just what is currently open)
-
-    var htmlFileURL: URL?
-    var pdfFileURL: URL?
 
     // MARK: - Shared window state
 

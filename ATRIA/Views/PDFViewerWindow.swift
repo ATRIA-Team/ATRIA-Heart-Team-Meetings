@@ -8,10 +8,11 @@ import PDFKit
 
 struct PDFViewerWindow: View {
     @Environment(AppStore.self) private var store
+    let url: URL?
 
     var body: some View {
         Group {
-            if let url = store.document.pdfFileURL {
+            if let url = url {
                 PDFViewRepresentable(url: url)
                     .ignoresSafeArea()
             } else {
@@ -22,7 +23,7 @@ struct PDFViewerWindow: View {
                 )
             }
         }
-        .navigationTitle("PDF Viewer")
+        .navigationTitle(url?.lastPathComponent ?? "PDF Viewer")
     }
 }
 
