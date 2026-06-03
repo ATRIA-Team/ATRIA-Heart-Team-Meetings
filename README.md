@@ -6,6 +6,45 @@
 
 ---
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Platform Requirements](#platform-requirements)
+- [Project Structure](#project-structure)
+- [Architecture](#architecture)
+  - [Model-View pattern](#model-view-pattern)
+  - [AppStore](#appstore)
+  - [Window topology](#window-topology-visionos)
+- [SharePlay & Real-Time Sync](#shareplay--real-time-sync)
+  - [Message types](#message-types)
+  - [Message flow](#message-flow)
+- [DICOM Decoding](#dicom-decoding)
+- [App Walkthrough](#app-walkthrough)
+  - [1 — Home](#1--home)
+  - [2 — Lobby: Loading Patient Files](#2--lobby-loading-patient-files)
+  - [3 — Session Start: Shared Window & Remote Controls](#3--session-start-shared-window--remote-controls)
+  - [4 — Shared Window: Medical Documents](#4--shared-window-medical-documents)
+  - [5 — Shared Window: CT Scan](#5--shared-window-ct-scan)
+  - [6 — Annotation: Local Canvas](#6--annotation-local-canvas)
+  - [7 — Annotation: Drawing](#7--annotation-drawing)
+  - [8 — Annotation: Shared on the Meeting](#8--annotation-shared-on-the-meeting)
+  - [9 — Full Session View](#9--full-session-view)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Clone and open](#clone-and-open)
+- [Testing](#testing)
+- [macOS Companion App](#macos-companion-app)
+- [Debug Flags](#debug-flags)
+- [Contributing](#contributing)
+  - [Branch strategy](#branch-strategy)
+  - [Opening a Pull Request](#opening-a-pull-request)
+  - [Commit messages](#commit-messages)
+  - [What not to include in a PR](#what-not-to-include-in-a-pr)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
+
+---
+
 ## Overview
 
 ATRIA enables medical teams to review diagnostic imaging studies together in mixed reality. Multiple clinicians wearing Apple Vision Pro can join a shared session and simultaneously explore patient's clinical information, CT scans with slice navigation, window/level adjustments, and take together annotations that are synchronized in real time across all participants, allowing for a collaborative environment.
