@@ -5,7 +5,7 @@ DerivedData/
 *.hmap
 *.ipa
 *.xcuserstate
-*.md
+CLAUDE.md
 xcuserdata/
 
 # Swift Package Manager

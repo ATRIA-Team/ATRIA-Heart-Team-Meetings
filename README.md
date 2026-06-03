@@ -167,21 +167,127 @@ Raw 16-bit buffers are retained in `DICOMExamBundle.rawPixelBuffers16` so preset
 
 ---
 
-## Navigation Flow
+## App Walkthrough
+
+A step-by-step visual guide through the main flows of ATRIA.
+
+> Screenshots go in `assets/screenshots/`. Drop the files there and the images below will render automatically on GitHub.
+
+---
+
+### 1 — Home
+
+The entry point of the app. From here the user can open the offline DICOM visualizer, browse saved annotations, or start a new meeting.
+
+| Home | Offline DICOM Viewer | Annotations |
+|:---:|:---:|:---:|
+| ![Home view](assets/screenshots/01-home.png) | ![Offline DICOM visualizer](assets/screenshots/02-dicom-viewer.png) | ![Saved annotations](assets/screenshots/03-annotations.png) |
+
+---
+
+### 2 — Lobby: Loading Patient Files
+
+Before starting a meeting, the host uploads the patient's files. This can be done in two ways: loading a pre-packaged `.atria` file from iCloud, or uploading each category of files manually.
+
+| Load .atria Package | Upload Files Manually |
+|:---:|:---:|
+| ![Load .atria package](assets/screenshots/04-lobby-atria-package.png) | ![Manual file upload](assets/screenshots/05-lobby-manual-upload.png) |
+
+Once files are loaded, the lobby shows a live summary of everything that has been uploaded and is ready to share.
+
+| Uploaded Files List |
+|:---:|
+| ![Uploaded files list](assets/screenshots/06-lobby-files-list.png) |
+
+---
+
+### 3 — Session Start: Shared Window & Remote Controls
+
+When all participants are ready and the meeting starts, two windows open automatically: the **Shared Window** (visible and synced to all participants) and the **Remote Controls** panel (local to each participant, used to push content to the shared window).
+
+| Shared Window | Remote Controls |
+|:---:|:---:|
+| ![Shared window](assets/screenshots/07-shared-window.png) | ![Remote controls](assets/screenshots/08-remote-controls.png) |
+
+---
+
+### 4 — Shared Window: Medical Documents
+
+Any participant can push a PDF document (medical history, vitals, blood tests) to the shared window. Scroll position is synchronized in real time.
+
+| Shared Window — PDF |
+|:---:|
+| ![Shared window with PDF](assets/screenshots/09-shared-window-pdf.png) |
+
+---
+
+### 5 — Shared Window: CT Scan
+
+A participant pushes a CT scan to the shared window. Slice navigation and window/level preset are synchronized across all devices.
+
+| Shared Window — CT Scan |
+|:---:|
+| ![Shared window with CT scan](assets/screenshots/10-shared-window-ct.png) |
+
+---
+
+### 6 — Annotation: Local Canvas
+
+While the CT scan is on the shared window, any participant can open a local 2D annotation canvas tied to the current slice. The canvas is independent and private until explicitly shared.
+
+| CT on Shared Window + Annotation Open Locally |
+|:---:|
+| ![CT and annotation open](assets/screenshots/11-ct-and-annotation-open.png) |
+
+---
+
+### 7 — Annotation: Drawing
+
+The participant draws on the annotation canvas using a spatial stylus. Strokes are captured locally at native latency.
+
+| Drawing on the Annotation Canvas |
+|:---:|
+| ![Drawing on annotation](assets/screenshots/12-annotation-drawing.png) |
+
+---
+
+### 8 — Annotation: Shared on the Meeting
+
+Once the annotation is ready, the participant pushes it to the shared window. All participants see the annotated slice in sync.
+
+| Annotation Shared on the Meeting |
+|:---:|
+| ![Annotation shared](assets/screenshots/13-annotation-shared.png) |
+
+---
+
+### 9 — Full Session View
+
+An example of a complete session: a participant has medical documents open locally, the CT scan is on the shared window, and an annotation canvas is open alongside.
+
+| Medical Data Locally · CT on Shared Window · Annotation Open |
+|:---:|
+| ![Full session view](assets/screenshots/14-full-session.png) |
+
+---
+
+### Navigation map
 
 ```
-HomeView3  (not in session)
-  ├── "DICOM Viewer"     →  ContentView
-  ├── "Start meeting"    →  LobbyView2 (file upload + start SharePlay)
+HomeView  (not in session)
+  ├── "DICOM Viewer"     →  Offline DICOM visualizer
+  ├── "Start meeting"    →  LobbyView (file upload + start SharePlay)
   └── "Annotations"      →  SavedAnnotationsView
 
-LobbyView2  (pre-lobby, before SharePlay)
+LobbyView  (pre-session)
   ├── Load .atria Package button
   ├── 7 manual upload buttons (one per exam/document category)
-  └── "Start meeting"    →  GroupActivitySharingSheet
+  └── "Start meeting"    →  GroupActivitySharingSheet → session
 
-LobbyView  (in-session, waiting for all participants)
-  └── All ready          →  sessionHasStarted latches → SharedWindow
+Session
+  ├── SharedWindow       →  CT / Echo / Coro / PDF (synced to all)
+  ├── RemoteControls     →  Push content to SharedWindow (local)
+  └── Annotation canvas  →  Draw locally → push to SharedWindow
 ```
 
 `RootView` drives the top-level switch. Once `sessionHasStarted` latches to `true` it never reverts — late joiners skip the lobby and land directly in `SharedWindow`.
