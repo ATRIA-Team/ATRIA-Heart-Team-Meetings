@@ -366,13 +366,13 @@ Stores are constructed directly with `MockDICOMImporter` and an inactive `ShareP
 The **ATRIAmac** target is a standalone drag-and-drop organizer with no SharePlay dependency. It follows the same MV + store pattern.
 
 **Workflow:**
-1. Drag files into one of seven category tiles (Medical History, Vitals, Blood Tests, Echo, CT, Coro, Other)
-2. Name the folder in the side panel
-3. Click **Create Folder** — opens `NSOpenPanel` to choose a save location
-4. **Upload to iCloud** — moves the folder to iCloud Drive as a `.atria` package
-5. Load the `.atria` package in the visionOS app via **LobbyView2**
+1. Drag files into one of seven category tiles (Medical History, Vitals, Blood Tests, Echo, CT, Coro, Other).
+2. Name the folder in the side panel.
+3. Click **Create Folder**. This will open a panel to choose a save location. 
+4. **Upload to iCloud** Save the folder to iCloud Drive as a `.atria` package.
+5. Load the `.atria` package in the visionOS app.
 
-The output is a single `.atria` package (custom UTI `com.atria-team.atria-package`) that the visionOS app can open directly.
+The output is a single `.atria` package that the visionOS app can open directly. All of the files will be stored inside the package.
 
 ---
 
@@ -382,7 +382,7 @@ The output is a single `.atria` package (custom UTI `com.atria-team.atria-packag
 
 | Flag | Effect |
 |---|---|
-| `bypassSharePlay` | Simulates a live SharePlay session without requiring FaceTime — useful for UI testing on a single device |
+| `bypassSharePlay` | Simulates a live SharePlay session without requiring FaceTime. Useful for UI testing on a single device or in the simulator. Set the debug flag to `true` to enable it. |
 
 ---
 
