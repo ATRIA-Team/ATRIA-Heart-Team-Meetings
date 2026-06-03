@@ -20,15 +20,15 @@
   - [Message flow](#message-flow)
 - [DICOM Decoding](#dicom-decoding)
 - [App Walkthrough](#app-walkthrough)
-  - [1 — Home](#1--home)
-  - [2 — Lobby: Loading Patient Files](#2--lobby-loading-patient-files)
-  - [3 — Session Start: Shared Window & Remote Controls](#3--session-start-shared-window--remote-controls)
-  - [4 — Shared Window: Medical Documents](#4--shared-window-medical-documents)
-  - [5 — Shared Window: CT Scan](#5--shared-window-ct-scan)
-  - [6 — Annotation: Local Canvas](#6--annotation-local-canvas)
-  - [7 — Annotation: Drawing](#7--annotation-drawing)
-  - [8 — Annotation: Shared on the Meeting](#8--annotation-shared-on-the-meeting)
-  - [9 — Full Session View](#9--full-session-view)
+  - [1 - Home](#1--home)
+  - [2 - Lobby: Loading Patient Files](#2--lobby-loading-patient-files)
+  - [3 - Session Start: Shared Window & Remote Controls](#3--session-start-shared-window--remote-controls)
+  - [4 - Shared Window: Medical Documents](#4--shared-window-medical-documents)
+  - [5 - Shared Window: CT Scan](#5--shared-window-ct-scan)
+  - [6 - Annotation: Local Canvas](#6--annotation-local-canvas)
+  - [7 - Annotation: Drawing](#7--annotation-drawing)
+  - [8 - Annotation: Shared on the Meeting](#8--annotation-shared-on-the-meeting)
+  - [9 - Full Session View](#9--full-session-view)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Clone and open](#clone-and-open)
@@ -216,7 +216,7 @@ A step-by-step visual guide through the main flows of ATRIA.
 
 ---
 
-### 1 — Home
+### 1 - Home
 
 The entry point of the app. From here the user can open the offline DICOM visualizer, browse saved annotations, or start a new meeting.
 
@@ -226,7 +226,7 @@ The entry point of the app. From here the user can open the offline DICOM visual
 
 ---
 
-### 2 — Lobby: Loading Patient Files
+### 2 - Lobby: Loading Patient Files
 
 Before starting a meeting, the host uploads the patient's files. This can be done in two ways: loading a pre-packaged `.atria` file from iCloud, or uploading each category of files manually.
 
@@ -242,7 +242,7 @@ Once files are loaded, the lobby shows a live summary of everything that has bee
 
 ---
 
-### 3 — Session Start: Shared Window & Remote Controls
+### 3 - Session Start: Shared Window & Remote Controls
 
 When all participants are ready and the meeting starts, two windows open automatically: the **Shared Window** (visible and synced to all participants) and the **Remote Controls** panel (local to each participant, used to push content to the shared window).
 
@@ -252,7 +252,7 @@ When all participants are ready and the meeting starts, two windows open automat
 
 ---
 
-### 4 — Shared Window: Medical Documents
+### 4 - Shared Window: Medical Documents
 
 Any participant can push a PDF document (medical history, vitals, blood tests) to the shared window. Scroll position is synchronized in real time.
 
@@ -262,7 +262,7 @@ Any participant can push a PDF document (medical history, vitals, blood tests) t
 
 ---
 
-### 5 — Shared Window: CT Scan
+### 5 - Shared Window: CT Scan
 
 A participant pushes a CT scan to the shared window. Slice navigation and window/level preset are synchronized across all devices.
 
@@ -272,7 +272,7 @@ A participant pushes a CT scan to the shared window. Slice navigation and window
 
 ---
 
-### 6 — Annotation: Local Canvas
+### 6 - Annotation: Local Canvas
 
 While the CT scan is on the shared window, any participant can open a local 2D annotation canvas tied to the current slice. The canvas is independent and private until explicitly shared.
 
@@ -282,7 +282,7 @@ While the CT scan is on the shared window, any participant can open a local 2D a
 
 ---
 
-### 7 — Annotation: Drawing
+### 7 - Annotation: Drawing
 
 The participant draws on the annotation canvas using a spatial stylus. Strokes are captured locally at native latency.
 
@@ -292,7 +292,7 @@ The participant draws on the annotation canvas using a spatial stylus. Strokes a
 
 ---
 
-### 8 — Annotation: Shared on the Meeting
+### 8 - Annotation: Shared on the Meeting
 
 Once the annotation is ready, the participant pushes it to the shared window. All participants see the annotated slice in sync.
 
@@ -302,7 +302,7 @@ Once the annotation is ready, the participant pushes it to the shared window. Al
 
 ---
 
-### 9 — Full Session View
+### 9 - Full Session View
 
 An example of a complete session: a participant has medical documents open locally, the CT scan is on the shared window, and an annotation canvas is open alongside.
 
@@ -525,3 +525,9 @@ _To be added._
 ## Acknowledgements
 
 Built with SwiftUI, RealityKit, GroupActivities, PencilKit, SwiftData, and PDFKit.
+
+---
+
+## Disclaimer
+
+ATRIA is a research prototype and is **not approved for medical use**. It does not provide medical advice, diagnosis, treatment suggestions, or any form of clinical assistance. Do not rely on this tool for any medical decision-making. For questions or feedback, visit [atria-team.github.io](https://atria-team.github.io/).
