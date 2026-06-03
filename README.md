@@ -4,23 +4,6 @@
 
 > A spatial, multi-participant visionOS meeting tool developed to help the Heart Team define the best strategical decision and approach to a cardiac surgery.
 
-<br>
-
-<div align="center">
-  <table border="0" cellspacing="0" cellpadding="16">
-    <tr>
-      <td align="center">
-        <img src="assets/icons/App%20Icon%20visionOS.png" width="120" alt="ATRIA visionOS icon"/>
-        <br/><sub><b>visionOS</b></sub>
-      </td>
-      <td align="center">
-        <img src="assets/icons/App%20Icon%20macOS.png" width="120" alt="ATRIA macOS icon"/>
-        <br/><sub><b>macOS</b></sub>
-      </td>
-    </tr>
-  </table>
-</div>
-
 ---
 
 ## Table of Contents
@@ -76,6 +59,23 @@ A companion macOS app allows users to organize patient files into structured `.a
 - Offline DICOM visualizer
 - `.atria` package format for bundling a full patient exam for transport
 - macOS companion app for organizing and uploading patient files to iCloud
+
+<br>
+
+<div align="center">
+  <table border="0" cellspacing="0" cellpadding="16">
+    <tr>
+      <td align="center">
+        <img src="assets/icons/App%20Icon%20visionOS.png" width="120" alt="ATRIA visionOS icon"/>
+        <br/><sub><b>visionOS</b></sub>
+      </td>
+      <td align="center">
+        <img src="assets/icons/App%20Icon%20macOS.png" width="120" alt="ATRIA macOS icon"/>
+        <br/><sub><b>macOS</b></sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
