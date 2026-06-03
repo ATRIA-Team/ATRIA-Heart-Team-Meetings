@@ -1,3 +1,5 @@
+![ATRIA Banner](assets/GitHub%20banner%20ATRIA.png)
+
 # ATRIA Heart Team Meetings for Apple Vision Pro
 
 > A spatial, multi-participant visionOS meeting tool developed to help the Heart Team define the best strategical decision and approach to a cardiac surgery.
