@@ -1,21 +1,21 @@
-# ATRIA — Collaborative Clinical Viewer for Apple Vision Pro
+# ATRIA Heart Team Meetings for Apple Vision Pro
 
-> A spatial, multi-participant DICOM viewer built for visionOS with real-time SharePlay synchronization, 3D immersive drawing, and 2D annotation.
+> A spatial, multi-participant visionOS meeting tool developed to help the Heart Team define the best strategical decision and approach to a cardiac surgery.
 
 ---
 
 ## Overview
 
-ATRIA enables medical teams to review diagnostic imaging studies together in mixed reality. Multiple clinicians wearing Apple Vision Pro can join a shared session and simultaneously explore CT scans, echocardiograms, and coronary angiographies — with slice navigation, window/level adjustments, and annotations synchronized in real time across all participants.
+ATRIA enables medical teams to review diagnostic imaging studies together in mixed reality. Multiple clinicians wearing Apple Vision Pro can join a shared session and simultaneously explore patient's clinical information, CT scans with slice navigation, window/level adjustments, and take together annotations that are synchronized in real time across all participants, allowing for a collaborative environment.
 
-A companion macOS app allows users to organize patient files into structured `.atria` packages that can be loaded directly into a session.
+A companion macOS app allows users to organize patient files into structured `.atria` packages that can be shared on iCloud and then loaded directly into a session started on Apple Vision Pro.
 
 **Key capabilities:**
 - Real-time DICOM slice viewing synchronized across participants via SharePlay
 - 3D spatial drawing with RealityKit in a mixed-reality immersive space
-- 2D annotation with Apple Pencil Pro (normalized strokes synced to peers)
+- 2D annotation with any spatial stylus (normalized strokes synced to peers)
 - Support for CT, Echo, and Coronary Angiography exam types
-- Offline document sharing (PDFs, images) alongside imaging studies
+- Offline DICOM visualizer
 - `.atria` package format for bundling a full patient exam for transport
 - macOS companion app for organizing and uploading patient files to iCloud
 
