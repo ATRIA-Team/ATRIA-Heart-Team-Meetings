@@ -28,7 +28,7 @@ A companion macOS app allows users to organize patient files into structured `.a
 | `ATRIA` (visionOS) | Apple Vision Pro | visionOS 26.0 |
 | `ATRIAmac` (macOS) | Mac | macOS 26.2 |
 
-**SharePlay features require a real visionOS device** — they cannot be fully tested in the simulator.
+**SharePlay features require a real visionOS device**. Not all the features of the app can be tested in the simulator: since most of the flow requires the participants to be in a FaceTime call, the simulator is not the ideal environment to test the app. 
 
 ---
 
@@ -61,7 +61,7 @@ ATRIA/
 
 ### Model-View pattern
 
-The app follows an **MV (Model-View)** pattern — there are no ViewModels. `@Observable` stores replace that layer. Views read state directly from injected stores and call action methods on them.
+The app follows an **MV (Model-View)** pattern. There are no ViewModels as `@Observable` stores replace that layer. Views read state directly from injected stores and call action methods on them.
 
 ```
 Views  ──calls──▶  AppStore  ──coordinates──▶  Domain Stores
@@ -103,7 +103,7 @@ Views  ──calls──▶  AppStore  ──coordinates──▶  Domain Stores
 
 ## SharePlay & Real-Time Sync
 
-ATRIA uses Apple's **GroupActivities** framework to synchronize state across participants. **No pixel data or file contents cross the wire** — only control signals. Each participant loads their own local copy of exam files.
+ATRIA uses Apple's **GroupActivities** framework to synchronize state across participants. **No pixel data or file contents cross the wire** since all the contents of the meeting is cached locally by downloading the `.atria` file package from iCloud. Each participant loads their own local copy of exam files. The app also allows participants to upload manually all the files that are required for the meeting, without needing the `.atria` package.
 
 ### Message types
 
@@ -135,8 +135,6 @@ SharePlayCoordinator.send(_:)  ──broadcasts──▶  Remote peers
     ▼
 UI updates
 ```
-
-**Adding a new synced state:** add a `case` to `DICOMSyncMessage.Kind`, handle it in `SessionStore.applyMessage(_:)`, and add it to the guard list in `SharePlayCoordinator.apply(_:from:)` so `isApplyingRemoteChange` is raised correctly.
 
 ---
 
@@ -285,20 +283,6 @@ The output is a single `.atria` package (custom UTI `com.atria-team.atria-packag
 ## License
 
 _To be added._
-
----
-
-## Citation
-
-If you use ATRIA in your research, please cite:
-
-```
-@software{atria2025,
-  title   = {ATRIA: A Collaborative Spatial DICOM Viewer for Apple Vision Pro},
-  year    = {2025},
-  url     = {<repo-url>}
-}
-```
 
 ---
 
