@@ -197,9 +197,9 @@ Before starting a meeting, the host uploads the patient's files. This can be don
 
 Once files are loaded, the lobby shows a live summary of everything that has been uploaded and is ready to share.
 
-| Uploaded Files List |
-|:---:|
-| ![Uploaded files list](assets/screenshots/06-lobby-files-list.png) |
+<p align="center">
+  <img src="assets/screenshots/06-lobby-files-list.png" width="700" alt="Uploaded files list">
+</p>
 
 ---
 
@@ -217,9 +217,9 @@ When all participants are ready and the meeting starts, two windows open automat
 
 Any participant can push a PDF document (medical history, vitals, blood tests) to the shared window. Scroll position is synchronized in real time.
 
-| Shared Window — PDF |
-|:---:|
-| ![Shared window with PDF](assets/screenshots/09-shared-window-pdf.png) |
+<p align="center">
+  <img src="assets/screenshots/09-shared-window-pdf.png" width="700" alt="Shared window with PDF">
+</p>
 
 ---
 
@@ -227,9 +227,9 @@ Any participant can push a PDF document (medical history, vitals, blood tests) t
 
 A participant pushes a CT scan to the shared window. Slice navigation and window/level preset are synchronized across all devices.
 
-| Shared Window — CT Scan |
-|:---:|
-| ![Shared window with CT scan](assets/screenshots/10-shared-window-ct.png) |
+<p align="center">
+  <img src="assets/screenshots/10-shared-window-ct.png" width="700" alt="Shared window with CT scan">
+</p>
 
 ---
 
@@ -237,9 +237,9 @@ A participant pushes a CT scan to the shared window. Slice navigation and window
 
 While the CT scan is on the shared window, any participant can open a local 2D annotation canvas tied to the current slice. The canvas is independent and private until explicitly shared.
 
-| CT on Shared Window + Annotation Open Locally |
-|:---:|
-| ![CT and annotation open](assets/screenshots/11-ct-and-annotation-open.png) |
+<p align="center">
+  <img src="assets/screenshots/11-ct-and-annotation-open.png" width="700" alt="CT and annotation open locally">
+</p>
 
 ---
 
@@ -247,9 +247,9 @@ While the CT scan is on the shared window, any participant can open a local 2D a
 
 The participant draws on the annotation canvas using a spatial stylus. Strokes are captured locally at native latency.
 
-| Drawing on the Annotation Canvas |
-|:---:|
-| ![Drawing on annotation](assets/screenshots/12-annotation-drawing.png) |
+<p align="center">
+  <img src="assets/screenshots/12-annotation-drawing.png" width="700" alt="Drawing on the annotation canvas">
+</p>
 
 ---
 
@@ -257,9 +257,9 @@ The participant draws on the annotation canvas using a spatial stylus. Strokes a
 
 Once the annotation is ready, the participant pushes it to the shared window. All participants see the annotated slice in sync.
 
-| Annotation Shared on the Meeting |
-|:---:|
-| ![Annotation shared](assets/screenshots/13-annotation-shared.png) |
+<p align="center">
+  <img src="assets/screenshots/13-annotation-shared.png" width="700" alt="Annotation shared on the meeting">
+</p>
 
 ---
 
@@ -267,9 +267,9 @@ Once the annotation is ready, the participant pushes it to the shared window. Al
 
 An example of a complete session: a participant has medical documents open locally, the CT scan is on the shared window, and an annotation canvas is open alongside.
 
-| Medical Data Locally · CT on Shared Window · Annotation Open |
-|:---:|
-| ![Full session view](assets/screenshots/14-full-session.png) |
+<p align="center">
+  <img src="assets/screenshots/14-full-session.png" width="900" alt="Full session view">
+</p>
 
 ---
 
@@ -385,6 +385,95 @@ The output is a single `.atria` package that the visionOS app can open directly.
 | Flag | Effect |
 |---|---|
 | `bypassSharePlay` | Simulates a live SharePlay session without requiring FaceTime. Useful for UI testing on a single device or in the simulator. Set the debug flag to `true` to enable it. |
+
+To enable it, open `ATRIA/App/DebugFlags.swift` and set the flag to `true`:
+
+```swift
+// DebugFlags.swift
+// Toggle `bypassSharePlay` to simulate a live session without FaceTime.
+
+enum DebugFlags {
+    static let bypassSharePlay = true  // ← change this
+}
+```
+
+> **Important:** always set this back to `false` before committing. Never merge a PR with `bypassSharePlay = true`.
+
+---
+
+## Contributing
+
+We welcome contributions from collaborators and researchers. Please follow the guidelines below to keep the codebase clean and the review process efficient.
+
+### Branch strategy
+
+```
+main        ← stable, production-ready code
+  └── develop       ← integration branch, all PRs merge here first
+        └── feature/your-feature-name   ← your work
+        └── fix/short-description-of-bug
+        └── docs/what-you-documented
+```
+
+- **Never push directly to `main` or `develop`.**
+- Always branch off `develop` and open your PR back into `develop`.
+- Use lowercase and hyphens: `feature/annotation-export`, `fix/slice-sync-crash`.
+
+### Opening a Pull Request
+
+**1. Keep it focused**  
+One PR = one feature or one fix. If you find yourself writing "and also…" in the description, split it into two PRs.
+
+**2. Write a clear title**  
+Use the format: `[Type] Short description` — e.g.:
+
+| Type | When to use |
+|---|---|
+| `[Feature]` | New capability added |
+| `[Fix]` | Bug corrected |
+| `[Refactor]` | Code restructured with no behavior change |
+| `[Docs]` | Documentation only |
+| `[Test]` | Tests added or updated |
+
+**3. Fill in the PR description**  
+Every PR must answer these three questions:
+
+- **What does this PR do?** — one paragraph describing the change and why it is needed.
+- **How was it tested?** — describe how you verified the change. If it requires a real device, say so.
+- **Are there any known limitations or follow-ups?** — list anything deliberately left out of scope.
+
+**4. Use the checklist**  
+Before marking the PR as ready for review, confirm:
+
+- [ ] Branch is up to date with `develop` (`git pull --rebase origin develop`)
+- [ ] The app builds without warnings on both `ATRIA` (visionOS) and `ATRIAmac` (macOS) schemes
+- [ ] All existing tests pass (`xcodebuild test` — see Testing section)
+- [ ] New store logic has unit tests in `ATRIATests/`
+- [ ] No pixel data, credentials, or patient data are included in any commit
+- [ ] If a new SharePlay message type was added, `DICOMSyncMessage.Kind`, `SessionStore.applyMessage(_:)`, and `SharePlayCoordinator.apply(_:from:)` are all updated consistently
+- [ ] Screenshots or a short screen recording are attached if the change affects any UI
+
+**5. Request a review**  
+Assign at least one reviewer before marking the PR ready. Do not merge your own PR.
+
+### Commit messages
+
+Write short, imperative commit messages that describe *what* changed:
+
+```
+Add annotation export to PDF
+Fix slice index out-of-bounds on empty exam
+Update SharePlay coordinator to handle new preset message
+```
+
+Avoid vague messages like `fix stuff`, `WIP`, or `changes`.
+
+### What not to include in a PR
+
+- Unrelated refactors or formatting changes mixed with functional changes
+- Commented-out code left as a fallback
+- Debug flags left set to `true`
+- New files not referenced by anything in the project
 
 ---
 
