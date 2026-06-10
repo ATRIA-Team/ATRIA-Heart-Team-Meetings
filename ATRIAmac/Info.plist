@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleExecutable</key>
-	<string>$(EXECUTABLE_NAME)</string>
+	<string>ATRIAmac</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>com.DemoDICOM.app</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -13,13 +13,13 @@
 	<key>CFBundleDisplayName</key>
 	<string>ATRIA Companion App</string>
 	<key>CFBundlePackageType</key>
-	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(MARKETING_VERSION)</string>
+	<string>1.0</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>2</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<string>26.2</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.utilities</string>
 	<key>NSHumanReadableCopyright</key>
