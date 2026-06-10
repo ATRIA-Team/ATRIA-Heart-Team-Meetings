@@ -16,5 +16,27 @@ struct DemoDICOMmacApp: App {
             ContentView()
                 .environment(store)
         }
+        .commands {
+            HelpCommands()
+        }
+
+        WindowGroup("Help", id: "help") {
+            HelpView()
+        }
+        .windowResizability(.contentSize)
+        .defaultSize(width: 680, height: 620)
+    }
+}
+
+private struct HelpCommands: Commands {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some Commands {
+        CommandGroup(replacing: .help) {
+            Button("ATRIA Companion App Help") {
+                openWindow(id: "help")
+            }
+            .keyboardShortcut("?", modifiers: .command)
+        }
     }
 }
