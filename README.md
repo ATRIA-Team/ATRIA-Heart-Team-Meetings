@@ -421,6 +421,8 @@ Stores are constructed directly with `MockDICOMImporter` and an inactive `ShareP
 
 ## macOS Companion App
 
+<img src="assets/product%20page/macOS/ATRIAmac%20Product%20Page%201.png" width="600" alt="ATRIA Companion App screenshot"/>
+
 The **ATRIAmac** target is a standalone drag-and-drop organizer with no SharePlay dependency. It follows the same MV + store pattern.
 
 **Workflow:**
