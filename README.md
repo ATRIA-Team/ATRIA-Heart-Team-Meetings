@@ -539,7 +539,7 @@ Avoid vague messages like `fix stuff`, `WIP`, or `changes`.
 
 ## License
 
-_To be added._
+This project is under MIT License.
 
 ---
 
