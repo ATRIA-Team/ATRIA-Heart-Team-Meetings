@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ATRIA-Team/DICOM-Decoder.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "7902967736f00841dbbafb65924d53056d5faa27"
+        "revision" : "7902967736f00841dbbafb65924d53056d5faa27",
+        "version" : "1.0.0"
       }
     },
     {

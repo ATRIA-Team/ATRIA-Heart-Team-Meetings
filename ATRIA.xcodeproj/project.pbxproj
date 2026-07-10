@@ -42,7 +42,6 @@
 		781BD5FB2FBC7C6800AE0DEF /* Exceptions for "ATRIAmac" folder in "ATRIAmac" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				FolderModel.swift,
 				Info.plist,
 			);
 			target = 78773F022FADDA17008A1D66 /* ATRIAmac */;
@@ -828,8 +827,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ATRIA-Team/DICOM-Decoder.git";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
