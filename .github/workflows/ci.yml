@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, production]
+  push:
+    branches: [develop, production]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard-debug-flags:
+    name: Debug flags are off
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify bypassSharePlay is false
+        run: |
+          if ! grep -q 'static let bypassSharePlay = false' ATRIA/App/DebugFlags.swift; then
+            echo '::error file=ATRIA/App/DebugFlags.swift::bypassSharePlay must be false — never merge with debug flags enabled (see CONTRIBUTING.md)'
+            exit 1
+          fi
+
+  test-macos:
+    name: macOS companion tests (ATRIAmac)
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Run ATRIAmac tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ATRIA.xcodeproj \
+            -scheme ATRIAmac \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY=""
+
+  test-visionos:
+    name: visionOS app tests (ATRIA)
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Ensure visionOS simulator runtime
+        run: |
+          if ! xcrun simctl list runtimes | grep -q visionOS; then
+            echo "visionOS runtime not preinstalled — downloading"
+            sudo xcodebuild -downloadPlatform visionOS
+          fi
+          xcrun simctl list devices 'Apple Vision Pro'
+      - name: Run ATRIA tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ATRIA.xcodeproj \
+            -scheme ATRIA \
+            -destination 'platform=visionOS Simulator,name=Apple Vision Pro' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY=""
