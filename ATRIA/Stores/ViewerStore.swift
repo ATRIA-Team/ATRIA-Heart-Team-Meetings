@@ -1,6 +1,6 @@
 //
 //  ViewerStore.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

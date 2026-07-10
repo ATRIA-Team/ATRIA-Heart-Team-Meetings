@@ -1,6 +1,6 @@
 //
 //  PencilCanvas.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

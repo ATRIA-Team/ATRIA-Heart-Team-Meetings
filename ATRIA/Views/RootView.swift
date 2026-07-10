@@ -1,6 +1,6 @@
 //
 //  RootView.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

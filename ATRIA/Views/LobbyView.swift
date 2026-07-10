@@ -1,6 +1,6 @@
 //
 //  LobbyView.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Igor Tarantino on 22/05/2026.
 //
@@ -9,6 +9,10 @@ import SwiftUI
 import GroupActivities
 import UniformTypeIdentifiers
 import _GroupActivities_UIKit
+
+extension UTType {
+    static let atriaPackage = UTType(importedAs: "com.atria-team.atria-package")
+}
 
 // MARK: - Category metadata
 

@@ -1,6 +1,6 @@
 //
 //  DICOMImporter.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

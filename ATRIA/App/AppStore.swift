@@ -1,6 +1,6 @@
 //
 //  AppStore.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

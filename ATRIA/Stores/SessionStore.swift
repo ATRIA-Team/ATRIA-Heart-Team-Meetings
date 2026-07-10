@@ -1,6 +1,6 @@
 //
 //  SessionStore.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

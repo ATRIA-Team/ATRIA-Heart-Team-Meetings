@@ -1,6 +1,6 @@
 //
 //  SessionStoreTests.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 //  Tests for `SessionStore.applyMessage(_:)` — the routing layer between
 //  incoming SharePlay messages and domain stores.

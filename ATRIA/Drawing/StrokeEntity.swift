@@ -1,6 +1,6 @@
 //
 //  StrokeEntity.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Adapted from SharedSpaceExample2 by Igor Tarantino.
 //  Mesh update strategy (replace vs. recreate) adapted from ShareDraw / StrokeHelpers.swift.

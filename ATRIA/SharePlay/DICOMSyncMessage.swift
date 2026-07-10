@@ -1,6 +1,6 @@
 //
 //  DICOMSyncMessage.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

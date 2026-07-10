@@ -1,6 +1,6 @@
 //
 //  AtriaManifest.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import Foundation

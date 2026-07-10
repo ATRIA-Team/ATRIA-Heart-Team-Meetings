@@ -1,6 +1,6 @@
 //
 //  PreLobbyButton.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Igor Tarantino on 22/05/2026.
 //

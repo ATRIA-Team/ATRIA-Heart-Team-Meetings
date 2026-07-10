@@ -1,6 +1,6 @@
 //
 //  RemoteControlsView.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

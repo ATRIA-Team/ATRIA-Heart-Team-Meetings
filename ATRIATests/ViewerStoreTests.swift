@@ -1,6 +1,6 @@
 //
 //  ViewerStoreTests.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 
 import Testing

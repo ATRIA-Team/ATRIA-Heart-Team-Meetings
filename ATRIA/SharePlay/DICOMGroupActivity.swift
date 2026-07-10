@@ -1,6 +1,6 @@
 //
 //  DICOMGroupActivity.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import GroupActivities

@@ -1,6 +1,6 @@
 //
 //  MockDICOMImporter.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 //  Test double for `DICOMImporting`. Captures call arguments and returns a
 //  pre-configured result (success or failure) without touching the filesystem.

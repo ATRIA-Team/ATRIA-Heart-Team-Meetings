@@ -1,6 +1,6 @@
 //
 //  GlassCard.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

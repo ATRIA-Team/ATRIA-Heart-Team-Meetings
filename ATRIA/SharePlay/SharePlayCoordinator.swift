@@ -1,6 +1,6 @@
 //
 //  SharePlayCoordinator.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import GroupActivities

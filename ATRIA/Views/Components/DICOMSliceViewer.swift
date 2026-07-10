@@ -1,6 +1,6 @@
 //
 //  DICOMSliceViewer.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  AnnotationStoreTests.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 
 import Foundation

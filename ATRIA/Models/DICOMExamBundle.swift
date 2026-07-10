@@ -1,6 +1,6 @@
 //
 //  DICOMExamBundle.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import CoreGraphics

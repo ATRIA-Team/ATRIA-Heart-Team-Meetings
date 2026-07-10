@@ -1,6 +1,6 @@
 //
 //  MainTabView.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

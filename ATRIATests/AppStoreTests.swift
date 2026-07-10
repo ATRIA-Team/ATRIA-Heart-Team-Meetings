@@ -1,6 +1,6 @@
 //
 //  AppStoreTests.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 //  Tests for the cross-cutting coordination logic in AppStore — the methods that
 //  mutate multiple domain stores at once and broadcast to peers.

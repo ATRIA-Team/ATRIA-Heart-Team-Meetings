@@ -1,6 +1,6 @@
 //
 //  TestFixtures.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 //  Shared helpers for creating test data without touching the filesystem or real DICOM decoders.
 //

@@ -231,8 +231,6 @@ Raw 16-bit buffers are retained in `DICOMExamBundle.rawPixelBuffers16` so preset
 
 A step-by-step visual guide through the main flows of ATRIA.
 
-> Screenshots go in `assets/screenshots/`. Drop the files there and the images below will render automatically on GitHub.
-
 ---
 
 ### 1 - Home
@@ -365,7 +363,7 @@ Session
 ### Clone and open
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/ATRIA-Team/ATRIA-Heart-Team-Meetings.git
 cd ATRIA
 open ATRIA.xcodeproj
 ```

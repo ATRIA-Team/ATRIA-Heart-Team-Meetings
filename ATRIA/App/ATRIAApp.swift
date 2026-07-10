@@ -1,6 +1,6 @@
 //
-//  DemoDICOMApp.swift
-//  DemoDICOM
+//  ATRIAApp.swift
+//  ATRIA
 //
 //  Created by Michele Coppola on 25/03/2026.
 //
@@ -10,7 +10,7 @@ import SwiftData
 import GroupActivities
 
 @main
-struct DemoDICOMApp: App {
+struct ATRIAApp: App {
 
     @State private var store = AppStore()
 

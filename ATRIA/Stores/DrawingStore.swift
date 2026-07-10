@@ -1,6 +1,6 @@
 //
 //  DrawingStore.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

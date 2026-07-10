@@ -1,6 +1,6 @@
 //
 //  SavedAnnotation.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

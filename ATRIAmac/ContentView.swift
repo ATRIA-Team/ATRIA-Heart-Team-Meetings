@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

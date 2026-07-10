@@ -1,6 +1,6 @@
 //
 //  StylusTipManager.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Adapted from SharedSpaceExample2 by Igor Tarantino.
 //

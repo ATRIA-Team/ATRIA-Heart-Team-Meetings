@@ -1,6 +1,6 @@
 //
 //  SidePanel.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

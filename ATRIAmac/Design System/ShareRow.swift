@@ -1,6 +1,6 @@
 //
 //  ShareRow.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

@@ -1,11 +1,11 @@
 //
 //  FolderStoreTests.swift
-//  DemoDICOMmacTests
+//  ATRIAmacTests
 //
 
 import Testing
 import Foundation
-@testable import DemoDICOMmac
+@testable import ATRIAmac
 
 @Suite("FolderStore")
 @MainActor

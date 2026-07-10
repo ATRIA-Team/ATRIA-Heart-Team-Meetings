@@ -1,6 +1,6 @@
 //
 //  FolderStore.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import Foundation

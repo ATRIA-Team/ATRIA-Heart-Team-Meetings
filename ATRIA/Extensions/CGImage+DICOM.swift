@@ -1,6 +1,6 @@
 //
 //  CGImage+DICOM.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created on 25/03/2026.
 //

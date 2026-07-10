@@ -1,6 +1,6 @@
 //
 //  AnnotationView.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

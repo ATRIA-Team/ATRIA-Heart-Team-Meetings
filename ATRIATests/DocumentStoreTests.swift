@@ -1,6 +1,6 @@
 //
 //  DocumentStoreTests.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 
 import Testing

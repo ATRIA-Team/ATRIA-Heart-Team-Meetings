@@ -1,6 +1,6 @@
 //
 //  SharePlayTransport.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

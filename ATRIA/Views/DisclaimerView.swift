@@ -1,6 +1,6 @@
 //
 //  DisclaimerView.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Igor Tarantino on 23/05/2026.
 //

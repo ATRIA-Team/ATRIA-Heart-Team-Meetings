@@ -1,6 +1,6 @@
 //
 //  DocumentStore.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import Foundation

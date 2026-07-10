@@ -1,6 +1,6 @@
 //
 //  DrawPointMessage.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import RealityKit

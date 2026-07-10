@@ -1,6 +1,6 @@
 //
 //  AnnotationStore.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

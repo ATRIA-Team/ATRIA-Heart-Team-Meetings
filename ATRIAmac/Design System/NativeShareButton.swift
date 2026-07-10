@@ -1,6 +1,6 @@
 //
 //  NativeShareButton.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

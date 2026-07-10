@@ -1,6 +1,6 @@
 //
 //  HelpView.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

@@ -1,6 +1,6 @@
 //
 //  DropTile.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

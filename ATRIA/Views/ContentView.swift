@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Michele Coppola on 25/03/2026.
 //

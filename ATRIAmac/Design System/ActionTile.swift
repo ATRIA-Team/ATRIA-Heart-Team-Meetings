@@ -1,6 +1,6 @@
 //
 //  ActionTile.swift
-//  DemoDICOMmac
+//  ATRIAmac
 //
 
 import SwiftUI

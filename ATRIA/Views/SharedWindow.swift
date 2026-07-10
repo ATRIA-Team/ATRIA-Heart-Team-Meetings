@@ -1,6 +1,6 @@
 //
 //  SharedWindow.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Igor Tarantino on 07/05/2026.
 //

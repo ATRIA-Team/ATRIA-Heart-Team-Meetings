@@ -1,6 +1,6 @@
 //
 //  HTMLViewerWindow.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Igor Tarantino on 19/05/2026.
 //
@@ -8,7 +8,7 @@
 
 //
 //  HTMLViewerWindow.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

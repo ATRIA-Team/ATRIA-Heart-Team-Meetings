@@ -1,6 +1,6 @@
 //
 //  PDFViewerWindow.swift
-//  DemoDICOM
+//  ATRIA
 //
 
 import SwiftUI

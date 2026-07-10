@@ -1,6 +1,6 @@
 //
 //  RemoteControlButton.swift
-//  DemoDICOM
+//  ATRIA
 //
 //  Created by Igor Tarantino on 06/05/2026.
 //

@@ -1,13 +1,13 @@
 //
 //  MockFolderOrganiser.swift
-//  DemoDICOMmacTests
+//  ATRIAmacTests
 //
 //  Test double for FolderOrganising. Returns a pre-configured result without
 //  touching the filesystem.
 //
 
 import Foundation
-@testable import DemoDICOMmac
+@testable import ATRIAmac
 
 final class MockFolderOrganiser: FolderOrganising, @unchecked Sendable {
 
@@ -34,14 +34,14 @@ final class MockFolderOrganiser: FolderOrganising, @unchecked Sendable {
     private(set) var createCallCount = 0
     private(set) var lastCreatedName: String?
     private(set) var lastCreatedParent: URL?
-    private(set) var lastCreatedFiles: [Category: [URL]]?
+    private(set) var lastCreatedFiles: [ATRIAmac.Category: [URL]]?
 
     private(set) var moveCallCount = 0
     private(set) var lastMovedURL: URL?
 
     // MARK: - FolderOrganising
 
-    func createFolder(named name: String, in parent: URL, files: [Category: [URL]]) async throws -> URL {
+    func createFolder(named name: String, in parent: URL, files: [ATRIAmac.Category: [URL]]) async throws -> URL {
         createCallCount += 1
         lastCreatedName = name
         lastCreatedParent = parent

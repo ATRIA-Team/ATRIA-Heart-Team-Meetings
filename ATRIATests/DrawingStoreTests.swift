@@ -1,6 +1,6 @@
 //
 //  DrawingStoreTests.swift
-//  DemoDICOMTests
+//  ATRIATests
 //
 
 import Foundation
