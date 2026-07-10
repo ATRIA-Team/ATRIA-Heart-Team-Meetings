@@ -109,9 +109,15 @@ ATRIA/
 ├── ATRIATests/                  # visionOS unit tests
 ├── ATRIAmacTests/               # macOS unit tests
 └── Packages/
-    ├── DICOM-Decoder/           # Local Swift package: DicomCore library
-    └── RealityKitContent/       # RealityKit scene assets
+    └── RealityKitContent/       # Local Swift package: RealityKit scene assets
 ```
+
+Two additional Swift packages are resolved automatically by Xcode from the ATRIA-Team organization:
+
+| Package | Repository | Purpose |
+|---|---|---|
+| `DicomCore` | [ATRIA-Team/DICOM-Decoder](https://github.com/ATRIA-Team/DICOM-Decoder) | DICOM file parsing and windowing |
+| `iCloudFolderSync` | [ATRIA-Team/iCloudFolderSync](https://github.com/ATRIA-Team/iCloudFolderSync) | iCloud Drive folder synchronization |
 
 ---
 
@@ -198,7 +204,7 @@ UI updates
 
 ## DICOM Decoding
 
-The `DicomCore` library (`Packages/DICOM-Decoder/`) handles all DICOM file parsing.
+The `DicomCore` library handles all DICOM file parsing. It lives in its own repository — [ATRIA-Team/DICOM-Decoder](https://github.com/ATRIA-Team/DICOM-Decoder) — and is resolved automatically by Xcode as a Swift Package dependency.
 
 **Entry point:** `DCMDecoder`
 ```swift
@@ -394,8 +400,11 @@ xcodebuild test \
 
 ### DICOM decoder package tests (no Xcode required)
 
+The decoder lives in its own repository — clone it separately:
+
 ```bash
-cd Packages/DICOM-Decoder
+git clone https://github.com/ATRIA-Team/DICOM-Decoder.git
+cd DICOM-Decoder
 swift test
 
 # Run a single test

@@ -20,7 +20,9 @@ struct HomeView: View {
     @State private var showDisclaimer = false
 
     var body: some View {
+        
         NavigationStack {
+            
             ZStack {
 
                 VStack(alignment: .leading) {
