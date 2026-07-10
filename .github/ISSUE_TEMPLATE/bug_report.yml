@@ -1,0 +1,79 @@
+name: 🐛 Bug report
+description: Report something that is broken or not working as expected
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! The more detail you provide, the faster we can reproduce and fix it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug — what you did, what you expected, and what happened instead.
+      placeholder: "When I pushed a CT scan to the shared window, the other participant saw a black screen instead of the slice."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps so we can reproduce the problem.
+      placeholder: |
+        1. Start a meeting with two participants
+        2. Load a CT folder in the lobby
+        3. Pinch and hold the CT button in Remote Controls
+        4. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Where did it happen?
+      description: SharePlay bugs cannot occur in the simulator — this helps us triage.
+      options:
+        - Real Apple Vision Pro
+        - visionOS Simulator
+        - macOS companion app (ATRIAmac)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: shareplay
+    attributes:
+      label: Was a SharePlay session active?
+      options:
+        - "Yes — in a live session with other participants"
+        - "Yes — using the bypassSharePlay debug flag"
+        - "No — outside a session"
+        - Not applicable (macOS app)
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS and app version
+      placeholder: "visionOS 26.1, ATRIA built from develop @ a5bd94a"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots, or screen recording
+      description: Attach anything that helps — Xcode console output, a screenshot, or a short recording.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I confirm this report contains **no real patient data** — any attached DICOM files, screenshots, or recordings use anonymized or synthetic data only.
+          required: true
