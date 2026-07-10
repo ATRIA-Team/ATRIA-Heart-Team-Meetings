@@ -15,7 +15,7 @@ jobs:
     name: Debug flags are off
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Verify bypassSharePlay is false
         run: |
           if ! grep -q 'static let bypassSharePlay = false' ATRIA/App/DebugFlags.swift; then
@@ -28,7 +28,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Run ATRIAmac tests
@@ -46,7 +46,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Ensure visionOS simulator runtime
