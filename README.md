@@ -36,10 +36,6 @@
 - [macOS Companion App](#macos-companion-app)
 - [Debug Flags](#debug-flags)
 - [Contributing](#contributing)
-  - [Branch strategy](#branch-strategy)
-  - [Opening a Pull Request](#opening-a-pull-request)
-  - [Commit messages](#commit-messages)
-  - [What not to include in a PR](#what-not-to-include-in-a-pr)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
@@ -472,77 +468,13 @@ enum DebugFlags {
 
 ## Contributing
 
-We welcome contributions from collaborators and researchers. Please follow the guidelines below to keep the codebase clean and the review process efficient.
+We welcome contributions from collaborators and researchers. Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** before opening a pull request — it covers the branch strategy, PR format and checklist, commit message conventions, and how to report bugs.
 
-### Branch strategy
+In short:
 
-```
-main        ← stable, production-ready code
-  └── develop       ← integration branch, all PRs merge here first
-        └── feature/your-feature-name   ← your work
-        └── fix/short-description-of-bug
-        └── docs/what-you-documented
-```
-
-- **Never push directly to `main` or `develop`.**
-- Always branch off `develop` and open your PR back into `develop`.
-- Use lowercase and hyphens: `feature/annotation-export`, `fix/slice-sync-crash`.
-
-### Opening a Pull Request
-
-**1. Keep it focused**  
-One PR = one feature or one fix. If you find yourself writing "and also…" in the description, split it into two PRs.
-
-**2. Write a clear title**  
-Use the format: `[Type] Short description` — e.g.:
-
-| Type | When to use |
-|---|---|
-| `[Feature]` | New capability added |
-| `[Fix]` | Bug corrected |
-| `[Refactor]` | Code restructured with no behavior change |
-| `[Docs]` | Documentation only |
-| `[Test]` | Tests added or updated |
-
-**3. Fill in the PR description**  
-Every PR must answer these three questions:
-
-- **What does this PR do?** — one paragraph describing the change and why it is needed.
-- **How was it tested?** — describe how you verified the change. If it requires a real device, say so.
-- **Are there any known limitations or follow-ups?** — list anything deliberately left out of scope.
-
-**4. Use the checklist**  
-Before marking the PR as ready for review, confirm:
-
-- [ ] Branch is up to date with `develop` (`git pull --rebase origin develop`)
-- [ ] The app builds without warnings on both `ATRIA` (visionOS) and `ATRIAmac` (macOS) schemes
-- [ ] All existing tests pass (`xcodebuild test` — see Testing section)
-- [ ] New store logic has unit tests in `ATRIATests/`
-- [ ] No pixel data, credentials, or patient data are included in any commit
-- [ ] If a new SharePlay message type was added, `DICOMSyncMessage.Kind`, `SessionStore.applyMessage(_:)`, and `SharePlayCoordinator.apply(_:from:)` are all updated consistently
-- [ ] Screenshots or a short screen recording are attached if the change affects any UI
-
-**5. Request a review**  
-Assign at least one reviewer before marking the PR ready. Do not merge your own PR.
-
-### Commit messages
-
-Write short, imperative commit messages that describe *what* changed:
-
-```
-Add annotation export to PDF
-Fix slice index out-of-bounds on empty exam
-Update SharePlay coordinator to handle new preset message
-```
-
-Avoid vague messages like `fix stuff`, `WIP`, or `changes`.
-
-### What not to include in a PR
-
-- Unrelated refactors or formatting changes mixed with functional changes
-- Commented-out code left as a fallback
-- Debug flags left set to `true`
-- New files not referenced by anything in the project
+- Branch off `develop`, open your PR back into `develop` — never push directly to `main` or `develop`.
+- One PR = one feature or one fix, titled `[Type] Short description`.
+- Never include real patient data in any commit or issue.
 
 ---
 
