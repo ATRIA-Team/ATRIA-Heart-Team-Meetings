@@ -23,14 +23,14 @@ Open a [GitHub issue](https://github.com/ATRIA-Team/ATRIA-Heart-Team-Meetings/is
 ## Branch strategy
 
 ```
-main        ← stable, production-ready code
+production  ← stable, production-ready code
   └── develop       ← integration branch, all PRs merge here first
         └── feature/your-feature-name   ← your work
         └── fix/short-description-of-bug
         └── docs/what-you-documented
 ```
 
-- **Never push directly to `main` or `develop`.**
+- **Never push directly to `production` or `develop`.**
 - Always branch off `develop` and open your PR back into `develop`.
 - Use lowercase and hyphens: `feature/annotation-export`, `fix/slice-sync-crash`.
 

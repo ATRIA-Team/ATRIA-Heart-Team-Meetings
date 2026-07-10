@@ -470,7 +470,7 @@ We welcome contributions from collaborators and researchers. Please read **[CONT
 
 In short:
 
-- Branch off `develop`, open your PR back into `develop` — never push directly to `main` or `develop`.
+- Branch off `develop`, open your PR back into `develop` — never push directly to `production` or `develop`.
 - One PR = one feature or one fix, titled `[Type] Short description`.
 - Never include real patient data in any commit or issue.
 
