@@ -56,12 +56,29 @@ jobs:
             sudo xcodebuild -downloadPlatform visionOS
           fi
           xcrun simctl list devices 'Apple Vision Pro'
+      - name: Boot visionOS simulator
+        run: |
+          set -o pipefail
+          UDID=$(xcrun simctl list devices 'Apple Vision Pro' | grep -m1 -oE '[0-9A-F]{8}-([0-9A-F]{4}-){3}[0-9A-F]{12}')
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl erase "$UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
       - name: Run ATRIA tests
         run: |
           set -o pipefail
-          xcodebuild test \
-            -project ATRIA.xcodeproj \
-            -scheme ATRIA \
-            -destination 'platform=visionOS Simulator,name=Apple Vision Pro' \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY=""
+          n=0
+          until [ "$n" -ge 2 ]; do
+            xcodebuild test \
+              -project ATRIA.xcodeproj \
+              -scheme ATRIA \
+              -destination "platform=visionOS Simulator,id=$UDID" \
+              CODE_SIGNING_ALLOWED=NO \
+              CODE_SIGN_IDENTITY="" && break
+            n=$((n + 1))
+            echo "Test run failed (attempt $n) — retrying after simulator restart"
+            xcrun simctl shutdown "$UDID" || true
+            xcrun simctl boot "$UDID"
+            xcrun simctl bootstatus "$UDID" -b
+          done
+          [ "$n" -lt 2 ]
